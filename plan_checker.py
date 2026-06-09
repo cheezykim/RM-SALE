@@ -30,6 +30,20 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SHEET_ID = "1wM7DTHizhg_A3h0qV3EhX4os4hk46uolW-ESQSJkgZs"
 WORKSHEET_NAME = "retail_data"
 
+
+def get_service_account_info():
+    """Return Google credentials from Streamlit secrets."""
+    for key in ("service_account", "gcp_service_account"):
+        if key in st.secrets:
+            return dict(st.secrets[key])
+    return None
+
+
+def get_service_account_email(creds_dict):
+    if not creds_dict:
+        return "the service account email"
+    return creds_dict.get("client_email", "the service account email")
+
 # === MUST BE THE FIRST STREAMLIT COMMAND ===
 st.set_page_config(
     page_title="Sales Performance Dashboard", layout="wide", page_icon="📊"
@@ -192,13 +206,13 @@ def connect_to_google_sheets():
         ]
 
         # Check if secrets exist first
-        if 'service_account' not in st.secrets:
+        if not get_service_account_info():
             st.error("❌ Google Sheets credentials not found in secrets")
             st.info("Please add your service account credentials to Streamlit secrets")
             return None
 
         # Convert to dict (in case it's not already)
-        creds_dict = dict(st.secrets["service_account"])
+        creds_dict = get_service_account_info()
         
         # Validate required fields
         required_fields = ['type', 'project_id', 'private_key', 'client_email']
@@ -225,7 +239,7 @@ def connect_to_google_sheets():
     except Exception as e:
         st.error(f"❌ Failed to connect to Google Sheets: {str(e)}")
         st.info("💡 Make sure your Google Sheet is shared with: " + 
-               st.secrets["service_account"]["client_email"])
+               get_service_account_email(get_service_account_info()))
         return None
 
 def load_sheet_data(_gc, sheet_id, worksheet_name):
