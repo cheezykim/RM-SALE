@@ -1413,6 +1413,1051 @@ def init_session_state():
 
     if "form_reset_needed" not in st.session_state:
         st.session_state.form_reset_needed = False
+
+    if "crm_page" not in st.session_state:
+        st.session_state.crm_page = "Dashboard"
+
+    if "selected_potential_key" not in st.session_state:
+        st.session_state.selected_potential_key = None
+
+    if "crm_activity_log" not in st.session_state:
+        st.session_state.crm_activity_log = []
+
+
+CRM_SHEET_NAME = "potential_customers"
+CRM_COLUMNS = [
+    "Customer_Key", "Salesperson_ID", "Salesperson_Name", "Date_Added",
+    "Sender_Name", "Name", "Tel", "Rank", "Business", "Purpose", "Amount",
+    "Interest", "Loan_Type", "Tenure", "Maturity", "Source_Channel",
+    "Status", "Potential_Level", "Next_Follow_Up", "Potential_Products",
+    "Notes", "Activities", "Documents", "Last_Updated",
+]
+
+
+def crm_css():
+    st.markdown(
+        """
+        <style>
+        :root {
+            --cmb-green: #008751;
+            --cmb-green-dark: #006b41;
+            --cmb-bg: #F8FAFC;
+            --cmb-border: #E5E7EB;
+            --cmb-text: #0F172A;
+            --cmb-muted: #64748B;
+        }
+        html, body, [class*="css"] {
+            font-family: Inter, "Segoe UI", Arial, sans-serif !important;
+            color: var(--cmb-text);
+        }
+        .stApp { background: var(--cmb-bg); }
+        .main .block-container {
+            max-width: 1540px;
+            padding: 1.25rem 1.75rem 2rem;
+        }
+        [data-testid="stSidebar"] {
+            background: #FFFFFF;
+            border-right: 1px solid var(--cmb-border);
+        }
+        [data-testid="stSidebar"] img {
+            display: block;
+            margin: 8px auto 6px;
+        }
+        .sidebar-title {
+            text-align: center;
+            font-size: 12px;
+            color: #0F172A;
+            font-weight: 800;
+            margin-bottom: 22px;
+        }
+        .sidebar-group {
+            color: #64748B;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: .02em;
+            margin: 16px 0 6px;
+            text-transform: uppercase;
+        }
+        [data-testid="stSidebar"] .stRadio > label { display: none; }
+        [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label {
+            border-radius: 8px;
+            padding: 8px 10px;
+            margin: 3px 0;
+            border: 1px solid transparent;
+            color: #334155;
+        }
+        [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label:hover {
+            background: #F0FDF4;
+            border-color: #BBF7D0;
+        }
+        [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label:has(input:checked) {
+            background: #E7F7EF;
+            border-color: #B8E6CB;
+            color: var(--cmb-green-dark);
+        }
+        .crm-topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--cmb-border);
+            margin-bottom: 20px;
+        }
+        .crm-title h1 {
+            color: var(--cmb-green);
+            font-size: 26px;
+            line-height: 1.1;
+            margin: 0 0 4px;
+            font-weight: 750;
+        }
+        .crm-title p, .muted { color: var(--cmb-muted); margin: 0; font-size: 13px; }
+        .crm-user {
+            background: #FFFFFF;
+            border: 1px solid var(--cmb-border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            min-width: 190px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .user-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFFFFF;
+            background: linear-gradient(135deg, #008751, #2563EB);
+            font-weight: 800;
+        }
+        .crm-card {
+            background: #FFFFFF;
+            border: 1px solid var(--cmb-border);
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 1px 2px rgba(15,23,42,.04);
+        }
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .metric-card {
+            background: #FFFFFF;
+            border: 1px solid var(--cmb-border);
+            border-radius: 8px;
+            padding: 16px;
+            min-height: 96px;
+        }
+        .metric-card small { color: var(--cmb-muted); font-size: 12px; }
+        .metric-card strong { display: block; margin-top: 8px; font-size: 24px; color: var(--cmb-text); }
+        .crm-section-title {
+            font-size: 18px;
+            font-weight: 720;
+            margin: 8px 0 4px;
+        }
+        .crm-page-head {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 16px;
+            margin: 2px 0 14px;
+        }
+        .crm-page-head h2 {
+            margin: 0;
+            font-size: 24px;
+            line-height: 1.15;
+            color: #0F172A;
+        }
+        .crm-toolbar {
+            background: #FFFFFF;
+            border: 1px solid var(--cmb-border);
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 14px;
+        }
+        .crm-table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--cmb-border);
+            border-radius: 8px;
+            background: #FFFFFF;
+        }
+        .crm-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #FFFFFF;
+            font-size: 13px;
+            min-width: 960px;
+        }
+        .crm-table th {
+            background: #F8FAFC;
+            color: #334155;
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid var(--cmb-border);
+            white-space: nowrap;
+        }
+        .crm-table td {
+            padding: 10px;
+            border-bottom: 1px solid #EEF2F7;
+            vertical-align: middle;
+        }
+        .crm-table tr:hover { background: #F0FDF4; }
+        .status-pill, .lead-pill {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 4px 9px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .lead-hot { color: #B42318; background: #FEF3F2; }
+        .lead-warm { color: #92400E; background: #FFFBEB; }
+        .lead-cold { color: #475569; background: #F1F5F9; }
+        .status-pill { color: #006b41; background: #E7F7EF; }
+        .status-lost { color: #991B1B; background: #FEE2E2; }
+        .status-converted { color: #065F46; background: #D1FAE5; }
+        .status-progress { color: #1D4ED8; background: #DBEAFE; }
+        .info-strip {
+            background: #EAF6EF;
+            color: #006b41;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 13px;
+            font-weight: 650;
+            margin: 10px 0 14px;
+        }
+        .drawer {
+            background: #FFFFFF;
+            border: 1px solid var(--cmb-border);
+            border-radius: 8px;
+            padding: 16px;
+            position: sticky;
+            top: 12px;
+            box-shadow: -8px 0 24px rgba(15,23,42,.06);
+        }
+        .drawer-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--cmb-border);
+            margin-bottom: 12px;
+        }
+        .drawer-head h3 {
+            margin: 0 0 4px;
+            font-size: 20px;
+        }
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+        .detail-box {
+            border: 1px solid var(--cmb-border);
+            border-radius: 8px;
+            padding: 12px;
+            background: #FFFFFF;
+        }
+        .detail-box h4 {
+            margin: 0 0 10px;
+            font-size: 13px;
+            color: #0F172A;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 5px 0;
+            color: #334155;
+            font-size: 12px;
+        }
+        .detail-row span:first-child { color: var(--cmb-muted); }
+        .timeline-item {
+            border-left: 2px solid #B8E6CB;
+            padding: 0 0 12px 12px;
+            margin-left: 6px;
+            font-size: 13px;
+        }
+        .report-row {
+            display: grid;
+            grid-template-columns: minmax(220px, 1fr) 110px 110px;
+            gap: 10px;
+            align-items: center;
+            border-bottom: 1px solid #EEF2F7;
+            padding: 10px 0;
+        }
+        .report-row:last-child { border-bottom: 0; }
+        .stButton>button, .stDownloadButton>button, .stFormSubmitButton>button {
+            border-radius: 8px !important;
+            font-weight: 700 !important;
+        }
+        div[data-testid="stDataFrame"] {
+            border: 1px solid var(--cmb-border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        @media (max-width: 1100px) {
+            .metric-grid { grid-template-columns: repeat(2, minmax(150px, 1fr)); }
+            .crm-topbar { align-items: flex-start; flex-direction: column; }
+            .detail-grid { grid-template-columns: 1fr; }
+            .report-row { grid-template-columns: 1fr; }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def get_current_user():
+    user_data = st.session_state.get("user_data", {})
+    return {
+        "id": str(st.session_state.get("staff_id", "")).strip(),
+        "name": user_data.get("username", "Sales Officer"),
+        "role": str(user_data.get("role", "rm")).strip().lower(),
+        "allowed_sources": user_data.get("allowed_sources", "all"),
+    }
+
+
+def is_manager():
+    role = get_current_user()["role"]
+    return role in {"manager", "admin", "management", "head", "supervisor"}
+
+
+def safe_text(value):
+    if pd.isna(value):
+        return ""
+    return str(value).strip()
+
+
+def crm_customer_key(name, tel, salesperson_id):
+    raw = f"{safe_text(name).lower()}|{safe_text(tel)}|{safe_text(salesperson_id)}"
+    return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:16]
+
+
+def lead_label(level):
+    level = safe_text(level).upper()
+    if level in {"H", "HOT", "HIGH"}:
+        return "Hot"
+    if level in {"M", "WARM", "MEDIUM"}:
+        return "Warm"
+    return "Cold"
+
+
+def lead_badge(level):
+    label = lead_label(level)
+    klass = {"Hot": "lead-hot", "Warm": "lead-warm", "Cold": "lead-cold"}[label]
+    return f'<span class="lead-pill {klass}">{label} Lead</span>'
+
+
+def status_badge(status):
+    label = safe_text(status) or "Interested"
+    normalized = label.lower()
+    if normalized == "converted":
+        klass = "status-converted"
+    elif normalized == "lost":
+        klass = "status-lost"
+    elif normalized in {"follow up", "proposal sent", "document collection", "negotiation"}:
+        klass = "status-progress"
+    else:
+        klass = ""
+    return f'<span class="status-pill {klass}">{label}</span>'
+
+
+def display_label(column):
+    labels = {
+        "Sender_Name": "Sender Name",
+        "Name": "Customer Name",
+        "Tel": "Phone",
+        "Loan_Type": "Loan Type",
+        "Potential_Level": "Potential Level",
+        "Next_Follow_Up": "Next Follow Up",
+        "Date_Added": "Date Added",
+        "Source_Channel": "Source Channel",
+        "Salesperson_Name": "Sales Officer",
+    }
+    return labels.get(column, column.replace("_", " "))
+
+
+def crm_display_df(df, columns):
+    display = df.copy()
+    for col in columns:
+        if col not in display.columns:
+            display[col] = ""
+    display = display[columns].fillna("")
+    return display.rename(columns={col: display_label(col) for col in columns})
+
+
+def dataframe_to_excel_bytes(df, sheet_name="Report"):
+    import io
+
+    output = io.BytesIO()
+    clean = df.copy() if df is not None else pd.DataFrame()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        clean.to_excel(writer, index=False, sheet_name=sheet_name[:31])
+    return output.getvalue()
+
+
+def parse_amount(value):
+    text = safe_text(value).upper().replace("$", "").replace(",", "").replace("USD", "").strip()
+    multiplier = 1
+    if text.endswith("K"):
+        multiplier = 1000
+        text = text[:-1]
+    elif text.endswith("M"):
+        multiplier = 1000000
+        text = text[:-1]
+    try:
+        return float(text) * multiplier
+    except Exception:
+        return 0.0
+
+
+def ensure_potential_worksheet(_gc):
+    sheet = _gc.open_by_key(SHEET_ID)
+    try:
+        worksheet = sheet.worksheet(CRM_SHEET_NAME)
+    except gspread.exceptions.WorksheetNotFound:
+        worksheet = sheet.add_worksheet(title=CRM_SHEET_NAME, rows=1000, cols=len(CRM_COLUMNS))
+        worksheet.append_row(CRM_COLUMNS)
+        return worksheet
+
+    values = worksheet.get_all_values()
+    if not values:
+        worksheet.append_row(CRM_COLUMNS)
+    else:
+        headers = values[0]
+        missing = [col for col in CRM_COLUMNS if col not in headers]
+        if missing:
+            worksheet.update("A1", [headers + missing])
+    return worksheet
+
+
+def load_potential_customers():
+    try:
+        gc = connect_to_google_sheets()
+        if not gc:
+            return pd.DataFrame(columns=CRM_COLUMNS)
+        worksheet = ensure_potential_worksheet(gc)
+        values = worksheet.get_all_records()
+        if not values:
+            return pd.DataFrame(columns=CRM_COLUMNS)
+        df = pd.DataFrame(values)
+        for col in CRM_COLUMNS:
+            if col not in df.columns:
+                df[col] = ""
+        df["_row_number"] = range(2, len(df) + 2)
+        user = get_current_user()
+        if not is_manager():
+            df = df[df["Salesperson_ID"].astype(str).str.strip() == user["id"]]
+        return df.fillna("")
+    except Exception as e:
+        st.error(f"Could not load potential customers: {e}")
+        return pd.DataFrame(columns=CRM_COLUMNS)
+
+
+def add_potential_customer(row):
+    try:
+        gc = connect_to_google_sheets()
+        if not gc:
+            return False, "Google Sheets is not connected."
+        worksheet = ensure_potential_worksheet(gc)
+        potentials = load_potential_customers()
+        user = get_current_user()
+        key = crm_customer_key(row.get("Name", ""), row.get("Tel", ""), user["id"])
+        if not potentials.empty and key in potentials["Customer_Key"].astype(str).tolist():
+            return False, "This customer is already in My Potential Customers."
+
+        now_text = now_cambodia().strftime("%Y-%m-%d %H:%M:%S")
+        record = {
+            "Customer_Key": key,
+            "Salesperson_ID": user["id"],
+            "Salesperson_Name": user["name"],
+            "Date_Added": today_cambodia().strftime("%Y-%m-%d"),
+            "Sender_Name": row.get("Sender_Name", ""),
+            "Name": row.get("Name", ""),
+            "Tel": row.get("Tel", ""),
+            "Rank": row.get("Rank", row.get("Bank", "")),
+            "Business": row.get("Business", ""),
+            "Purpose": row.get("Purpose", ""),
+            "Amount": row.get("Amount", ""),
+            "Interest": row.get("Interest", ""),
+            "Loan_Type": row.get("Loan_Type", ""),
+            "Tenure": row.get("Tenure", ""),
+            "Maturity": row.get("Maturity", ""),
+            "Source_Channel": row.get("Source_Channel", "Market Visit"),
+            "Status": "Interested",
+            "Potential_Level": lead_label(row.get("Potential_Level", "Hot")),
+            "Next_Follow_Up": "",
+            "Potential_Products": row.get("Potential_Product", "SME Loan"),
+            "Notes": "",
+            "Activities": f"{today_cambodia().strftime('%d %b %Y')} - Added To Potential",
+            "Documents": "",
+            "Last_Updated": now_text,
+        }
+        worksheet.append_row([record.get(col, "") for col in CRM_COLUMNS])
+        st.session_state.crm_activity_log.insert(0, f"Added {record['Name']} as Potential Customer")
+        return True, "Customer successfully added to My Potential Customers."
+    except Exception as e:
+        return False, f"Could not add customer: {e}"
+
+
+def update_potential_customer(row_number, updates):
+    try:
+        gc = connect_to_google_sheets()
+        if not gc:
+            st.error("Google Sheets is not connected.")
+            return False
+        worksheet = ensure_potential_worksheet(gc)
+        headers = worksheet.row_values(1)
+        current = worksheet.row_values(int(row_number))
+        current = current + [""] * (len(headers) - len(current))
+        values = dict(zip(headers, current))
+        changes = []
+        for field, new_value in updates.items():
+            old_value = safe_text(values.get(field, ""))
+            if safe_text(new_value) != old_value:
+                changes.append(field)
+        values.update(updates)
+        activities = values.get("Activities", "")
+        if "Status" in changes:
+            activity_text = f"Status changed to {values.get('Status', 'Interested')}"
+        elif "Next_Follow_Up" in changes:
+            activity_text = f"Follow up scheduled for {values.get('Next_Follow_Up', '')}"
+        elif "Notes" in changes:
+            activity_text = "Notes updated"
+        elif changes:
+            activity_text = "Customer details updated"
+        else:
+            activity_text = "Customer reviewed"
+        activity_line = f"{today_cambodia().strftime('%d %b %Y')} - {activity_text}"
+        if activity_line not in activities:
+            values["Activities"] = (activities + "\n" + activity_line).strip()
+        values["Last_Updated"] = now_cambodia().strftime("%Y-%m-%d %H:%M:%S")
+        worksheet.update(f"A{int(row_number)}", [[values.get(col, "") for col in headers]])
+        st.session_state.crm_activity_log.insert(0, f"{safe_text(values.get('Name', 'Customer'))}: {activity_text}")
+        return True
+    except Exception as e:
+        st.error(f"Could not save changes: {e}")
+        return False
+
+
+def apply_visit_permissions(df):
+    user = get_current_user()
+    if user["allowed_sources"] != "all" and "Source_Channel" in df.columns:
+        df = df[df["Source_Channel"].isin(user["allowed_sources"])]
+    return df
+
+
+def load_visit_data_for_crm():
+    df = load_and_clean_data()
+    if df is None or df.empty:
+        return pd.DataFrame()
+    df = df.astype(str).replace({
+        "nan": "", "None": "", "NaN": "", "null": "", "NaT": "",
+        "none": "", "<NA>": "", "NoneType": "",
+    })
+    df = apply_visit_permissions(df)
+    if "Message_Date" in df.columns:
+        df["Message_Date"] = pd.to_datetime(df["Message_Date"], errors="coerce")
+    return df.fillna("")
+
+
+def render_topbar():
+    user = get_current_user()
+    initials = "".join([part[:1] for part in user["name"].split()[:2]]).upper() or "SO"
+    st.markdown(
+        f"""
+        <div class="crm-topbar">
+            <div class="crm-title">
+                <h1>Customer Data Management and Analysis</h1>
+                <p>Performance & Execution Management System</p>
+            </div>
+            <div class="crm-user">
+                <div class="user-avatar">{initials}</div>
+                <div><strong>{user['name']}</strong><br>
+                <span class="muted">{user['role'].title()}</span></div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_sidebar():
+    with st.sidebar:
+        st.image("Logo-CMCB_FA-15.png", width=86)
+        st.markdown('<div class="sidebar-title">CHIP MONG BANK CRM</div>', unsafe_allow_html=True)
+        nav_items = [
+            "Dashboard",
+            "Daily Planning",
+            "Market Visit Customers",
+            "My Potential Customers",
+            "Performance Analytics",
+            "Reports",
+            "Settings",
+        ]
+        st.markdown('<div class="sidebar-group">Workspace</div>', unsafe_allow_html=True)
+        current = st.session_state.get("crm_page", "Dashboard")
+        page = st.radio("Navigation", nav_items, index=nav_items.index(current), label_visibility="collapsed")
+        st.session_state.crm_page = page
+        st.markdown("---")
+        if st.button("Logout", use_container_width=True):
+            for key in ["logged_in", "user_data", "staff_id", "selected_potential_key"]:
+                st.session_state.pop(key, None)
+            st.rerun()
+    return st.session_state.crm_page
+
+
+def render_metric_grid(metrics):
+    html = '<div class="metric-grid">'
+    for label, value in metrics:
+        html += f'<div class="metric-card"><small>{label}</small><strong>{value}</strong></div>'
+    html += "</div>"
+    st.markdown(html, unsafe_allow_html=True)
+
+
+def render_html_table(df, columns, limit=30):
+    if df.empty:
+        st.info("No records found.")
+        return
+    html = '<table class="crm-table"><thead><tr>'
+    for col in columns:
+        html += f"<th>{col}</th>"
+    html += "</tr></thead><tbody>"
+    for _, row in df.head(limit).iterrows():
+        html += "<tr>"
+        for col in columns:
+            value = safe_text(row.get(col, ""))
+            if col == "Potential_Level":
+                value = lead_badge(value)
+            elif col == "Status":
+                value = status_badge(value)
+            html += f"<td>{value}</td>"
+        html += "</tr>"
+    html += "</tbody></table>"
+    st.markdown(f'<div class="crm-table-wrap">{html}</div>', unsafe_allow_html=True)
+
+
+def render_dashboard_page(visits, potentials):
+    st.markdown('<div class="crm-page-head"><div><h2>Dashboard</h2></div></div>', unsafe_allow_html=True)
+    visit_df = visits.copy()
+    if not visit_df.empty and "Message_Date" in visit_df.columns:
+        visit_dates = pd.to_datetime(visit_df["Message_Date"], errors="coerce")
+        this_month = (visit_dates.dt.month == today_cambodia().month) & (visit_dates.dt.year == today_cambodia().year)
+        total_visits = int(this_month.fillna(False).sum())
+    else:
+        total_visits = len(visits)
+    potential_count = len(potentials)
+    converted = len(potentials[potentials["Status"].astype(str).str.lower() == "converted"]) if not potentials.empty else 0
+    due = 0
+    if not potentials.empty and "Next_Follow_Up" in potentials.columns:
+        follow_dates = pd.to_datetime(potentials["Next_Follow_Up"], errors="coerce")
+        due = int((follow_dates.dt.date <= today_cambodia()).fillna(False).sum())
+    expected = sum(parse_amount(v) for v in potentials.get("Amount", [])) if not potentials.empty else 0
+    render_metric_grid([
+        ("Total Visits This Month", f"{total_visits:,}"),
+        ("Potential Customers", f"{potential_count:,}"),
+        ("Follow Ups Due", f"{due:,}"),
+        ("Converted Customers", f"{converted:,}"),
+        ("Expected Loan Amount", f"${expected:,.0f}"),
+    ])
+
+    left, right = st.columns([1.2, 1])
+    with left:
+        st.markdown('<div class="crm-card"><div class="crm-section-title">Recent Activities</div>', unsafe_allow_html=True)
+        activities = st.session_state.get("crm_activity_log", [])[:6]
+        if not activities and not potentials.empty:
+            activity_rows = potentials.sort_values("Last_Updated", ascending=False).head(6) if "Last_Updated" in potentials.columns else potentials.head(6)
+            activities = [f"{safe_text(row.get('Name', 'Customer'))}: {safe_text(row.get('Status', 'Interested'))}" for _, row in activity_rows.iterrows()]
+        if activities:
+            for item in activities:
+                st.write(f"- {item}")
+        else:
+            st.caption("No recent CRM activity yet.")
+        st.markdown("</div>", unsafe_allow_html=True)
+    with right:
+        st.markdown('<div class="crm-card"><div class="crm-section-title">Upcoming Follow Ups</div>', unsafe_allow_html=True)
+        follow_cols = ["Name", "Next_Follow_Up", "Status"]
+        upcoming = potentials.copy()
+        if not upcoming.empty:
+            upcoming["_follow"] = pd.to_datetime(upcoming["Next_Follow_Up"], errors="coerce")
+            upcoming = upcoming[upcoming["_follow"].notna()].sort_values("_follow")
+        render_html_table(upcoming, follow_cols, limit=8)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+
+def render_daily_planning_page():
+    st.markdown('<div class="crm-card"><div class="crm-section-title">Daily Planning</div><p class="muted">Submit planned visits and customer follow-up activity.</p></div>', unsafe_allow_html=True)
+    master_plan_date = st.date_input("Plan Date", value=st.session_state.plan_date, key="crm_master_plan_date")
+    if master_plan_date != st.session_state.plan_date:
+        st.session_state.plan_date = master_plan_date
+        for task in st.session_state.tasks:
+            task["plan_date"] = master_plan_date
+
+    for i, task in enumerate(st.session_state.tasks):
+        st.markdown(f"#### Activity {i + 1}")
+        c1, c2, c3, c4, c5 = st.columns([1, 1, 2, 2, 1])
+        with c1:
+            task["start_time"] = st.time_input("Start", task["start_time"], key=f"crm_start_{i}")
+        with c2:
+            task["end_time"] = st.time_input("End", task["end_time"], key=f"crm_end_{i}")
+        with c3:
+            task["activity"] = st.text_input("Activity", task["activity"], key=f"crm_activity_{i}")
+        with c4:
+            task["location"] = st.text_input("Location", task["location"], key=f"crm_location_{i}")
+        with c5:
+            task["num_customers"] = st.text_input("Customers", task["num_customers"], key=f"crm_num_{i}")
+
+        num = int(task["num_customers"]) if str(task["num_customers"]).isdigit() else 0
+        while len(task.get("customers", [])) < num:
+            task.setdefault("customers", []).append({"name": "", "contact": "", "biz": ""})
+        if num:
+            with st.expander(f"Customer details for activity {i + 1}", expanded=True):
+                for j in range(num):
+                    cc1, cc2, cc3 = st.columns(3)
+                    with cc1:
+                        task["customers"][j]["name"] = st.text_input("Customer Name", task["customers"][j]["name"], key=f"crm_cname_{i}_{j}")
+                    with cc2:
+                        task["customers"][j]["contact"] = st.text_input("Phone", task["customers"][j]["contact"], key=f"crm_cphone_{i}_{j}")
+                    with cc3:
+                        task["customers"][j]["biz"] = st.text_input("Business", task["customers"][j]["biz"], key=f"crm_cbiz_{i}_{j}")
+
+    add_col, save_col = st.columns([1, 1])
+    with add_col:
+        if st.button("Add Activity", use_container_width=True):
+            st.session_state.tasks.append({
+                "start_time": datetime.strptime("09:00", "%H:%M").time(),
+                "end_time": datetime.strptime("10:00", "%H:%M").time(),
+                "plan_date": st.session_state.plan_date,
+                "activity": "",
+                "location": "",
+                "num_customers": "",
+                "customers": [],
+            })
+            st.rerun()
+    with save_col:
+        if st.button("Submit Daily Plan", type="primary", use_container_width=True):
+            if display_and_submit_plan():
+                st.success("Daily plan submitted.")
+
+
+def filter_visit_df(visits):
+    st.markdown('<div class="crm-toolbar">', unsafe_allow_html=True)
+    f1, f2, f3, f4 = st.columns([1.2, 1.2, 1.5, 1.6])
+    with f1:
+        potential_options = ["All"] + sorted([x for x in visits.get("Potential_Level", pd.Series(dtype=str)).astype(str).unique() if x and x.lower() != "nan"])
+        potential = st.selectbox("Potential Level", potential_options)
+    with f2:
+        source_options = ["All"] + sorted([x for x in visits.get("Source_Channel", pd.Series(dtype=str)).astype(str).unique() if x and x.lower() != "nan"])
+        source = st.selectbox("Source Channel", source_options)
+    with f3:
+        date_filter = st.radio("Date Filter", ["All Dates", "Today", "Custom Range"], horizontal=True)
+    with f4:
+        query = st.text_input("Search Customer", placeholder="Search customer...")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    filtered = visits.copy()
+    if potential != "All" and "Potential_Level" in filtered.columns:
+        filtered = filtered[filtered["Potential_Level"].astype(str) == potential]
+    if source != "All" and "Source_Channel" in filtered.columns:
+        filtered = filtered[filtered["Source_Channel"].astype(str) == source]
+    if query:
+        haystack = filtered.astype(str).agg(" ".join, axis=1).str.lower()
+        filtered = filtered[haystack.str.contains(query.lower(), na=False)]
+    if date_filter == "Today" and "Message_Date" in filtered.columns:
+        filtered = filtered[pd.to_datetime(filtered["Message_Date"], errors="coerce").dt.date == today_cambodia()]
+    elif date_filter == "Custom Range" and "Message_Date" in filtered.columns:
+        d1, d2 = st.columns(2)
+        with d1:
+            start = st.date_input("From", today_cambodia() - timedelta(days=30))
+        with d2:
+            end = st.date_input("To", today_cambodia())
+        dates = pd.to_datetime(filtered["Message_Date"], errors="coerce").dt.date
+        filtered = filtered[(dates >= start) & (dates <= end)]
+    return filtered
+
+
+def render_market_visit_page(visits):
+    st.markdown('<div class="crm-page-head"><div><h2>Market Visit Customers</h2></div></div>', unsafe_allow_html=True)
+    if visits.empty:
+        st.warning("No market visit customer data found.")
+        return
+    filtered = filter_visit_df(visits)
+    count_col, export_col = st.columns([4, 1])
+    count_col.markdown(f'<div class="info-strip">Showing {len(filtered):,} customers</div>', unsafe_allow_html=True)
+    export_col.download_button("Export", filtered.to_csv(index=False), "market_visit_customers.csv", "text/csv", use_container_width=True)
+
+    columns = ["Sender_Name", "Name", "Tel", "Rank", "Business", "Purpose", "Amount", "Interest", "Loan_Type", "Tenure", "Maturity"]
+    columns = [c for c in columns if c in filtered.columns]
+    display = crm_display_df(filtered.head(30), columns)
+    st.dataframe(display, use_container_width=True, hide_index=True, height=360)
+    st.markdown("#### Actions")
+    for idx, row in filtered.head(30).iterrows():
+        c1, c2, c3, c4 = st.columns([1.4, 1.2, 1, 1])
+        c1.write(safe_text(row.get("Name", "")) or "Unnamed Customer")
+        c2.write(safe_text(row.get("Tel", "")))
+        c3.write(safe_text(row.get("Amount", "")))
+        with c4:
+            if st.button("+ Add Potential", key=f"add_potential_{idx}", use_container_width=True):
+                ok, msg = add_potential_customer(row)
+                if ok:
+                    st.success(msg)
+                    st.cache_data.clear()
+                    time.sleep(0.4)
+                    st.rerun()
+                else:
+                    st.warning(msg)
+
+
+def render_detail_drawer(customer):
+    st.markdown('<div class="drawer">', unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div class="drawer-head">
+            <div><h3>{safe_text(customer.get('Name', 'Customer'))}</h3>{status_badge(customer.get('Status', 'Interested'))}</div>
+            <div>{lead_badge(customer.get('Potential_Level', ''))}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    tabs = st.tabs(["Overview", "Notes", "Activities", "Documents"])
+    with tabs[0]:
+        st.markdown(
+            f"""
+            <div class="detail-grid">
+                <div class="detail-box">
+                    <h4>Business Information</h4>
+                    <div class="detail-row"><span>Business</span><strong>{safe_text(customer.get('Business', ''))}</strong></div>
+                    <div class="detail-row"><span>Phone</span><strong>{safe_text(customer.get('Tel', ''))}</strong></div>
+                    <div class="detail-row"><span>Rank</span><strong>{safe_text(customer.get('Rank', ''))}</strong></div>
+                    <div class="detail-row"><span>Source Channel</span><strong>{safe_text(customer.get('Source_Channel', ''))}</strong></div>
+                </div>
+                <div class="detail-box">
+                    <h4>Loan Information</h4>
+                    <div class="detail-row"><span>Expected Amount</span><strong>{safe_text(customer.get('Amount', ''))}</strong></div>
+                    <div class="detail-row"><span>Expected Interest</span><strong>{safe_text(customer.get('Interest', ''))}</strong></div>
+                    <div class="detail-row"><span>Loan Type</span><strong>{safe_text(customer.get('Loan_Type', ''))}</strong></div>
+                    <div class="detail-row"><span>Tenure</span><strong>{safe_text(customer.get('Tenure', ''))}</strong></div>
+                    <div class="detail-row"><span>Maturity Year</span><strong>{safe_text(customer.get('Maturity', ''))}</strong></div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        products = st.multiselect(
+            "Potential Products",
+            ["SME Loan", "Housing Loan", "Auto Loan", "Working Capital Loan", "Other Products"],
+            default=[p.strip() for p in safe_text(customer.get("Potential_Products", "")).split(",") if p.strip()],
+            key=f"products_{customer['Customer_Key']}",
+        )
+    with tabs[1]:
+        notes = st.text_area("Notes", value=safe_text(customer.get("Notes", "")), height=170, key=f"notes_{customer['Customer_Key']}")
+    with tabs[2]:
+        activities = safe_text(customer.get("Activities", ""))
+        if activities:
+            for line in activities.splitlines():
+                st.markdown(f'<div class="timeline-item">{line}</div>', unsafe_allow_html=True)
+        else:
+            st.caption("No activity yet.")
+    with tabs[3]:
+        uploaded = st.file_uploader("Upload documents", accept_multiple_files=True, key=f"docs_{customer['Customer_Key']}")
+        existing_docs = safe_text(customer.get("Documents", ""))
+        if existing_docs:
+            st.caption(existing_docs)
+
+    st.markdown("#### Follow Up Management")
+    d1, d2, d3 = st.columns(3)
+    current_date = pd.to_datetime(customer.get("Next_Follow_Up", ""), errors="coerce")
+    with d1:
+        next_follow = st.date_input("Next Follow Up", value=current_date.date() if pd.notna(current_date) else today_cambodia(), key=f"follow_{customer['Customer_Key']}")
+    with d2:
+        statuses = ["Interested", "Follow Up", "Proposal Sent", "Document Collection", "Negotiation", "Converted", "Lost"]
+        current_status = safe_text(customer.get("Status", "Interested")) or "Interested"
+        status = st.selectbox("Status", statuses, index=statuses.index(current_status) if current_status in statuses else 0, key=f"status_{customer['Customer_Key']}")
+    with d3:
+        levels = ["Hot", "Warm", "Cold"]
+        current_level = lead_label(customer.get("Potential_Level", "Hot"))
+        level = st.selectbox("Potential Level", levels, index=levels.index(current_level), key=f"level_{customer['Customer_Key']}")
+
+    s1, s2 = st.columns(2)
+    with s1:
+        if st.button("Cancel", use_container_width=True):
+            st.session_state.selected_potential_key = None
+            st.rerun()
+    with s2:
+        if st.button("Save Changes", type="primary", use_container_width=True):
+            docs = existing_docs
+            if uploaded:
+                docs = ", ".join([file.name for file in uploaded])
+            updates = {
+                "Status": status,
+                "Potential_Level": level,
+                "Next_Follow_Up": next_follow.strftime("%Y-%m-%d"),
+                "Potential_Products": ", ".join(products),
+                "Notes": notes,
+                "Documents": docs,
+            }
+            if update_potential_customer(customer["_row_number"], updates):
+                st.success("Changes saved.")
+                st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def render_potential_page(potentials):
+    st.markdown('<div class="crm-page-head"><div><h2>My Potential Customers</h2></div></div>', unsafe_allow_html=True)
+    if potentials.empty:
+        st.info("No potential customers yet. Add customers from Market Visit Customers.")
+        return
+    left, right = st.columns([2.2, 1])
+    with left:
+        st.markdown('<div class="crm-toolbar">', unsafe_allow_html=True)
+        f1, f2, f3, f4 = st.columns([1.5, 1, 1, 1])
+        with f1:
+            query = st.text_input("Search", placeholder="Search customer...")
+        with f2:
+            status = st.selectbox("Status", ["All"] + sorted([x for x in potentials["Status"].astype(str).unique() if x]))
+        with f3:
+            level = st.selectbox("Potential Level", ["All", "Hot", "Warm", "Cold"])
+        with f4:
+            date_filter = st.selectbox("Date Added", ["All", "Today", "Last 7 Days", "This Month"])
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        filtered = potentials.copy()
+        if query:
+            haystack = filtered.astype(str).agg(" ".join, axis=1).str.lower()
+            filtered = filtered[haystack.str.contains(query.lower(), na=False)]
+        if status != "All":
+            filtered = filtered[filtered["Status"].astype(str) == status]
+        if level != "All":
+            filtered = filtered[filtered["Potential_Level"].apply(lead_label) == level]
+        added_dates = pd.to_datetime(filtered["Date_Added"], errors="coerce").dt.date
+        if date_filter == "Today":
+            filtered = filtered[added_dates == today_cambodia()]
+        elif date_filter == "Last 7 Days":
+            filtered = filtered[added_dates >= today_cambodia() - timedelta(days=7)]
+        elif date_filter == "This Month":
+            filtered = filtered[added_dates.apply(lambda d: d and d.month == today_cambodia().month and d.year == today_cambodia().year)]
+
+        count_col, export_col = st.columns([4, 1])
+        count_col.markdown(f'<div class="info-strip">Showing {len(filtered):,} potential customers</div>', unsafe_allow_html=True)
+        export_col.download_button("Export", filtered.to_csv(index=False), "potential_customers.csv", "text/csv", use_container_width=True)
+        columns = ["Name", "Tel", "Business", "Purpose", "Amount", "Interest", "Loan_Type", "Status", "Potential_Level", "Next_Follow_Up", "Date_Added"]
+        table_display = crm_display_df(filtered.head(30), columns)
+        st.dataframe(table_display, use_container_width=True, hide_index=True, height=360)
+        st.markdown("#### Actions")
+        for idx, row in filtered.head(30).iterrows():
+            row_cols = st.columns([1.4, 1, 1, 1, .7])
+            row_cols[0].write(safe_text(row.get("Name", "")) or "Unnamed Customer")
+            row_cols[1].markdown(status_badge(row.get("Status", "")), unsafe_allow_html=True)
+            row_cols[2].markdown(lead_badge(row.get("Potential_Level", "")), unsafe_allow_html=True)
+            row_cols[3].write(safe_text(row.get("Next_Follow_Up", "")))
+            with row_cols[-1]:
+                if st.button("View", key=f"view_{row['Customer_Key']}", use_container_width=True):
+                    st.session_state.selected_potential_key = row["Customer_Key"]
+                    st.rerun()
+    with right:
+        selected_key = st.session_state.get("selected_potential_key")
+        selected = potentials[potentials["Customer_Key"].astype(str) == str(selected_key)] if selected_key else pd.DataFrame()
+        if selected.empty:
+            st.markdown('<div class="drawer"><h3>Customer Detail</h3><p class="muted">Select View from the table to open the right-side customer drawer.</p></div>', unsafe_allow_html=True)
+        else:
+            render_detail_drawer(selected.iloc[0])
+
+
+def render_analytics_page(visits, potentials):
+    st.markdown('<div class="crm-page-head"><div><h2>Performance Analytics</h2></div></div>', unsafe_allow_html=True)
+    converted = len(potentials[potentials["Status"].astype(str).str.lower() == "converted"]) if not potentials.empty else 0
+    conversion_rate = (converted / len(potentials) * 100) if len(potentials) else 0
+    expected = sum(parse_amount(v) for v in potentials.get("Amount", [])) if not potentials.empty else 0
+    follow_completed = len(potentials[potentials["Status"].astype(str).str.lower().isin(["follow up", "proposal sent", "document collection", "negotiation", "converted"])]) if not potentials.empty else 0
+    render_metric_grid([
+        ("Total Visits", f"{len(visits):,}"),
+        ("Potential Customers", f"{len(potentials):,}"),
+        ("Follow Ups Completed", f"{follow_completed:,}"),
+        ("Converted Customers", f"{converted:,}"),
+        ("Conversion Rate", f"{conversion_rate:.1f}%"),
+    ])
+    st.markdown(f'<div class="info-strip">Expected Loan Pipeline: ${expected:,.0f}</div>', unsafe_allow_html=True)
+    if not visits.empty and "Message_Date" in visits.columns:
+        trend = visits.copy()
+        trend["Month"] = pd.to_datetime(trend["Message_Date"], errors="coerce").dt.to_period("M").astype(str)
+        trend = trend.groupby("Month").size().reset_index(name="Visits")
+        st.plotly_chart(px.line(trend, x="Month", y="Visits", markers=True, title="Monthly Visit Trend"), use_container_width=True)
+    c1, c2 = st.columns(2)
+    with c1:
+        if not potentials.empty:
+            potential_trend = potentials.copy()
+            potential_trend["Month"] = pd.to_datetime(potential_trend["Date_Added"], errors="coerce").dt.to_period("M").astype(str)
+            potential_trend = potential_trend.groupby("Month").size().reset_index(name="Customers")
+            st.plotly_chart(px.line(potential_trend, x="Month", y="Customers", markers=True, title="Potential Customer Trend"), use_container_width=True)
+    with c2:
+        if not potentials.empty:
+            conv = potentials.copy()
+            conv = conv[conv["Status"].astype(str).str.lower() == "converted"]
+            if not conv.empty:
+                conv["Month"] = pd.to_datetime(conv["Last_Updated"], errors="coerce").dt.to_period("M").astype(str)
+                conv = conv.groupby("Month").size().reset_index(name="Converted")
+                st.plotly_chart(px.line(conv, x="Month", y="Converted", markers=True, title="Conversion Trend"), use_container_width=True)
+            else:
+                status_df = potentials.groupby("Status").size().reset_index(name="Customers")
+                st.plotly_chart(px.bar(status_df, x="Status", y="Customers", title="Pipeline Status"), use_container_width=True)
+    c3, c4 = st.columns(2)
+    with c3:
+        if not visits.empty and "Source_Channel" in visits.columns:
+            src = visits.groupby("Source_Channel").size().reset_index(name="Customers").sort_values("Customers", ascending=False).head(8)
+            st.plotly_chart(px.bar(src, x="Customers", y="Source_Channel", orientation="h", title="Top Source Channels"), use_container_width=True)
+    with c4:
+        if not visits.empty and "Business" in visits.columns:
+            biz = visits[visits["Business"].astype(str).str.strip() != ""].groupby("Business").size().reset_index(name="Customers").sort_values("Customers", ascending=False).head(8)
+            st.plotly_chart(px.bar(biz, x="Customers", y="Business", orientation="h", title="Top Business Sectors"), use_container_width=True)
+
+
+def render_reports_page(visits, potentials):
+    st.markdown('<div class="crm-page-head"><div><h2>Reports</h2></div></div>', unsafe_allow_html=True)
+    reports = {
+        "Market Visit Report": visits,
+        "Potential Customer Report": potentials,
+        "Follow Up Report": potentials[potentials["Next_Follow_Up"].astype(str) != ""] if not potentials.empty else potentials,
+        "Conversion Report": potentials[potentials["Status"].astype(str).str.lower() == "converted"] if not potentials.empty else potentials,
+    }
+    st.markdown('<div class="crm-card">', unsafe_allow_html=True)
+    for name, df in reports.items():
+        file_slug = name.lower().replace(" ", "_")
+        st.markdown(f'<div class="report-row"><strong>{name}</strong><span>{len(df):,} rows</span><span></span></div>', unsafe_allow_html=True)
+        c1, c2, c3 = st.columns([2, 1, 1])
+        c1.caption("CSV and Excel exports use the currently permitted data scope.")
+        c2.download_button("CSV", df.to_csv(index=False), f"{file_slug}.csv", "text/csv", key=f"csv_{name}", use_container_width=True)
+        c3.download_button(
+            "Excel",
+            dataframe_to_excel_bytes(df, name),
+            f"{file_slug}.xlsx",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key=f"xls_{name}",
+            use_container_width=True,
+        )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def render_settings_page():
+    user = get_current_user()
+    st.markdown('<div class="crm-section-title">Settings</div>', unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div class="crm-card">
+            <p><strong>User:</strong> {user['name']}</p>
+            <p><strong>Role:</strong> {user['role'].title()}</p>
+            <p><strong>Access:</strong> {'All team customers' if is_manager() else 'Own potential customers and follow ups only'}</p>
+            <p><strong>Potential worksheet:</strong> {CRM_SHEET_NAME}</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
         
 
 # === Streamlit App ===
@@ -2246,5 +3291,36 @@ def main():
 
 
     
+def crm_main():
+    init_session_state()
+
+    if not st.session_state.get("logged_in", False):
+        login_form()
+        st.stop()
+
+    crm_css()
+    page = render_sidebar()
+    render_topbar()
+
+    with st.spinner("Loading CRM data..."):
+        visits = load_visit_data_for_crm()
+        potentials = load_potential_customers()
+
+    if page == "Dashboard":
+        render_dashboard_page(visits, potentials)
+    elif page == "Daily Planning":
+        render_daily_planning_page()
+    elif page == "Market Visit Customers":
+        render_market_visit_page(visits)
+    elif page == "My Potential Customers":
+        render_potential_page(potentials)
+    elif page == "Performance Analytics":
+        render_analytics_page(visits, potentials)
+    elif page == "Reports":
+        render_reports_page(visits, potentials)
+    elif page == "Settings":
+        render_settings_page()
+
+
 if __name__ == "__main__":
-    main()
+    crm_main()
