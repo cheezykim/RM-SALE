@@ -46,7 +46,7 @@ export function PotentialCustomers({
         <div className="min-w-[210px]">
           <div className="font-extrabold text-slate-950">{safeText(row.original.Name, "Unnamed customer")}</div>
           <div className="mt-1 text-xs font-medium text-muted">{safeText(row.original.Tel, "No phone")}</div>
-          <div className="mt-2 text-xs text-muted">Owner: {safeText(row.original.Salesperson_Name, "-")}</div>
+          <div className="mt-2 inline-flex rounded-md bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">Brand: {safeText(row.original.Sender_Name, row.original.Source_Channel || "Market Visit")}</div>
         </div>
       )
     },
@@ -56,8 +56,8 @@ export function PotentialCustomers({
       cell: ({ row }) => (
         <div className="min-w-[220px]">
           <div className="font-bold text-slate-900">{safeText(row.original.Business, "-")}</div>
+          <div className="mt-1 text-xs text-muted">Bank: {safeText(row.original.Bank, row.original.Rank || "-")}</div>
           <div className="mt-1 max-w-[260px] truncate text-xs text-muted">{safeText(row.original.Purpose, "No purpose recorded")}</div>
-          <div className="mt-2 inline-flex rounded-md bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">{safeText(row.original.Source_Channel, "Market Visit")}</div>
         </div>
       )
     },

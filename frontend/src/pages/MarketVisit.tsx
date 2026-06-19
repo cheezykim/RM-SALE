@@ -47,7 +47,7 @@ export function MarketVisit({ user, visits }: { user: User; visits: VisitCustome
         <div className="min-w-[210px]">
           <div className="font-extrabold text-slate-950">{safeText(row.original.Name, "Unnamed customer")}</div>
           <div className="mt-1 text-xs font-medium text-muted">{safeText(row.original.Tel, "No phone")}</div>
-          <div className="mt-2 inline-flex rounded-md bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">{safeText(row.original.Sender_Name, "Market Visit")}</div>
+          <div className="mt-2 inline-flex rounded-md bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">Brand: {safeText(row.original.Sender_Name, "Market Visit")}</div>
         </div>
       )
     },
@@ -57,7 +57,7 @@ export function MarketVisit({ user, visits }: { user: User; visits: VisitCustome
       cell: ({ row }) => (
         <div className="min-w-[190px]">
           <div className="font-bold text-slate-900">{safeText(row.original.Business, "-")}</div>
-          <div className="mt-1 text-xs text-muted">Rank: {safeText(row.original.Rank, "-")}</div>
+          <div className="mt-1 text-xs text-muted">Bank: {safeText(row.original.Bank, "-")}</div>
           <div className="mt-1 max-w-[220px] truncate text-xs text-muted">{safeText(row.original.Purpose, "No purpose recorded")}</div>
         </div>
       )
@@ -93,11 +93,6 @@ export function MarketVisit({ user, visits }: { user: User; visits: VisitCustome
           <div className="mt-1 text-xs text-muted">{formatDate(row.original.Message_Date)}</div>
         </div>
       )
-    },
-    {
-      accessorKey: "Remark",
-      header: "Remark",
-      cell: ({ row }) => <div className="max-w-[240px] text-sm leading-5 text-slate-700">{safeText(row.original.Remark, "-")}</div>
     },
     {
       id: "Action",

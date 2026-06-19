@@ -52,7 +52,7 @@ export function VisitCustomerDrawer({
 
           <div className="border-b border-border px-6">
             <div className="flex gap-6">
-              {["Overview", "Notes", "Activities", "Documents"].map((item) => (
+              {["Overview", "Remark", "Notes", "Activities"].map((item) => (
                 <button
                   key={item}
                   onClick={() => setTab(item)}
@@ -70,7 +70,8 @@ export function VisitCustomerDrawer({
                 <InfoCard title="Business Information" rows={[
                   ["Business", customer.Business],
                   ["Phone", customer.Tel],
-                  ["Rank", customer.Rank],
+                  ["Brand", customer.Sender_Name],
+                  ["Bank", customer.Bank],
                   ["Source Channel", customer.Source_Channel]
                 ]} />
                 <InfoCard title="Loan Information" rows={[
@@ -92,9 +93,9 @@ export function VisitCustomerDrawer({
                 </div>
               </div>
             )}
+            {tab === "Remark" && <InfoPanel text={String(customer.Remark || "No remark recorded.")} />}
             {tab === "Notes" && <InfoPanel text={String(customer.Notes || "Customer notes will be stored after this customer is added as potential.")} />}
             {tab === "Activities" && <InfoPanel text={String(customer.Activities || "No activities recorded yet.")} />}
-            {tab === "Documents" && <InfoPanel text={String(customer.Documents || "No documents recorded yet.")} />}
           </div>
 
           <div className="border-t border-border p-6">
@@ -128,4 +129,3 @@ function InfoCard({ title, rows }: { title: string; rows: Array<[string, unknown
     </div>
   );
 }
-

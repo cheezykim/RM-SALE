@@ -24,8 +24,7 @@ export function CustomerDrawer({
     Potential_Level: customer?.Potential_Level || "Hot",
     Next_Follow_Up: customer?.Next_Follow_Up || "",
     Potential_Products: customer?.Potential_Products || "SME Loan",
-    Notes: customer?.Notes || "",
-    Documents: customer?.Documents || ""
+    Notes: customer?.Notes || ""
   });
 
   useEffect(() => {
@@ -34,8 +33,7 @@ export function CustomerDrawer({
       Potential_Level: customer?.Potential_Level || "Hot",
       Next_Follow_Up: customer?.Next_Follow_Up || "",
       Potential_Products: customer?.Potential_Products || "SME Loan",
-      Notes: customer?.Notes || "",
-      Documents: customer?.Documents || ""
+      Notes: customer?.Notes || ""
     });
   }, [customer]);
 
@@ -83,7 +81,7 @@ export function CustomerDrawer({
 
         <div className="border-b border-border px-6">
           <div className="flex gap-6">
-            {["Overview", "Notes", "Activities", "Documents"].map((item) => (
+            {["Overview", "Notes", "Activities"].map((item) => (
               <button
                 key={item}
                 onClick={() => setTab(item)}
@@ -101,7 +99,8 @@ export function CustomerDrawer({
               <InfoCard title="Business Information" rows={[
                 ["Business", customer.Business],
                 ["Phone", customer.Tel],
-                ["Rank", customer.Rank],
+                ["Brand", customer.Sender_Name],
+                ["Bank", customer.Bank || customer.Rank],
                 ["Source Channel", customer.Source_Channel]
               ]} />
               <InfoCard title="Loan Information" rows={[
@@ -141,18 +140,6 @@ export function CustomerDrawer({
                   {activity}
                 </div>
               ))}
-            </div>
-          )}
-          {tab === "Documents" && (
-            <div className="space-y-3">
-              <label className="label">Document names</label>
-              <input
-                className="input-control"
-                value={form.Documents}
-                onChange={(event) => setForm({ ...form, Documents: event.target.value })}
-                placeholder="Business License, Financial Statement"
-              />
-              <p className="text-xs text-muted">Matches the current Streamlit behavior by storing document names in Google Sheets.</p>
             </div>
           )}
         </div>

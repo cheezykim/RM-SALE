@@ -40,6 +40,7 @@ export type PotentialCustomer = {
   Name: string;
   Tel: string;
   Rank: string;
+  Bank?: string;
   Business: string;
   Purpose: string;
   Amount: string;
