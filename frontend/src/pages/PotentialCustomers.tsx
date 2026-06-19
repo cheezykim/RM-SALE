@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { Download, Search } from "lucide-react";
+import { Download, Eye, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { DataTable } from "../components/DataTable";
 import { CustomerDrawer } from "../components/CustomerDrawer";
@@ -7,7 +7,7 @@ import { LeadBadge, StatusBadge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import type { PotentialCustomer } from "../types";
 
-const columnsList = ["Name", "Tel", "Business", "Purpose", "Amount", "Interest", "Loan_Type", "Status", "Potential_Level", "Next_Follow_Up", "Date_Added"];
+const exportColumns = ["Name", "Tel", "Business", "Purpose", "Amount", "Interest", "Loan_Type", "Tenure", "Maturity", "Status", "Potential_Level", "Next_Follow_Up", "Date_Added", "Source_Channel", "Notes"];
 
 export function PotentialCustomers({
   potentials,
@@ -39,17 +39,64 @@ export function PotentialCustomers({
   }, [potentials, query, status, level, dateFilter]);
 
   const columns: ColumnDef<PotentialCustomer>[] = [
-    { accessorKey: "Name", header: "Customer Name" },
-    { accessorKey: "Tel", header: "Phone" },
-    { accessorKey: "Business", header: "Business" },
-    { accessorKey: "Purpose", header: "Purpose" },
-    { accessorKey: "Amount", header: "Amount" },
-    { accessorKey: "Interest", header: "Interest" },
-    { accessorKey: "Loan_Type", header: "Loan Type" },
-    { accessorKey: "Status", header: "Status", cell: ({ row }) => <StatusBadge status={row.original.Status} /> },
-    { accessorKey: "Potential_Level", header: "Potential Level", cell: ({ row }) => <LeadBadge level={row.original.Potential_Level} /> },
-    { accessorKey: "Next_Follow_Up", header: "Next Follow Up" },
-    { accessorKey: "Date_Added", header: "Date Added" },
+    {
+      accessorKey: "Name",
+      header: "Customer",
+      cell: ({ row }) => (
+        <div className="min-w-[210px]">
+          <div className="font-extrabold text-slate-950">{safeText(row.original.Name, "Unnamed customer")}</div>
+          <div className="mt-1 text-xs font-medium text-muted">{safeText(row.original.Tel, "No phone")}</div>
+          <div className="mt-2 text-xs text-muted">Owner: {safeText(row.original.Salesperson_Name, "-")}</div>
+        </div>
+      )
+    },
+    {
+      accessorKey: "Business",
+      header: "Business Profile",
+      cell: ({ row }) => (
+        <div className="min-w-[220px]">
+          <div className="font-bold text-slate-900">{safeText(row.original.Business, "-")}</div>
+          <div className="mt-1 max-w-[260px] truncate text-xs text-muted">{safeText(row.original.Purpose, "No purpose recorded")}</div>
+          <div className="mt-2 inline-flex rounded-md bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">{safeText(row.original.Source_Channel, "Market Visit")}</div>
+        </div>
+      )
+    },
+    {
+      accessorKey: "Amount",
+      header: "Facility",
+      cell: ({ row }) => (
+        <div className="min-w-[170px]">
+          <div className="font-extrabold text-bank-dark">{safeText(row.original.Amount, "-")}</div>
+          <div className="mt-1 text-xs font-medium text-slate-700">{safeText(row.original.Loan_Type, "Loan type not set")}</div>
+          <div className="mt-1 text-xs text-muted">Interest: {safeText(row.original.Interest, "-")}</div>
+        </div>
+      )
+    },
+    {
+      accessorKey: "Status",
+      header: "Pipeline",
+      cell: ({ row }) => (
+        <div className="min-w-[150px] space-y-2">
+          <StatusBadge status={row.original.Status} />
+          <LeadBadge level={row.original.Potential_Level} />
+        </div>
+      )
+    },
+    {
+      accessorKey: "Next_Follow_Up",
+      header: "Next Action",
+      cell: ({ row }) => (
+        <div className="min-w-[150px]">
+          <div className="font-bold text-slate-900">{formatDate(row.original.Next_Follow_Up, "No follow up")}</div>
+          <div className="mt-1 text-xs text-muted">Added {formatDate(row.original.Date_Added, "-")}</div>
+        </div>
+      )
+    },
+    {
+      accessorKey: "Notes",
+      header: "Latest Notes",
+      cell: ({ row }) => <div className="max-w-[260px] text-sm leading-5 text-slate-700">{safeText(row.original.Notes, "-")}</div>
+    },
     {
       id: "Action",
       header: "Action",
@@ -62,6 +109,7 @@ export function PotentialCustomers({
             setSelected(row.original);
           }}
         >
+          <Eye className="h-4 w-4" />
           View
         </Button>
       )
@@ -120,8 +168,18 @@ function Select({ label, value, options, onChange }: { label: string; value: str
   );
 }
 
+function safeText(value: unknown, fallback = "") {
+  const text = String(value ?? "").trim();
+  return text && text.toLowerCase() !== "nan" ? text : fallback;
+}
+
+function formatDate(value: unknown, fallback: string) {
+  const text = safeText(value);
+  return text ? text.slice(0, 10) : fallback;
+}
+
 function exportCsv(rows: PotentialCustomer[], filename: string) {
-  const csv = [columnsList.join(","), ...rows.map((row) => columnsList.map((key) => JSON.stringify(row[key] ?? "")).join(","))].join("\n");
+  const csv = [exportColumns.join(","), ...rows.map((row) => exportColumns.map((key) => JSON.stringify(row[key] ?? "")).join(","))].join("\n");
   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
   const a = document.createElement("a");
   a.href = url;

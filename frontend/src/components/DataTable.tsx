@@ -31,12 +31,12 @@ export function DataTable<T>({ data, columns, search = "", pageSize = 30, onRowC
   return (
     <div className="crm-card overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="min-w-[1000px] w-full border-collapse text-sm">
-          <thead className="bg-slate-50">
+        <table className="min-w-[1040px] w-full border-collapse text-sm">
+          <thead className="bg-slate-50/80">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <th key={header.id} className="border-b border-border px-4 py-3 text-left text-xs font-bold text-slate-700">
+                  <th key={header.id} className="border-b border-border px-5 py-3 text-left text-[11px] font-extrabold uppercase tracking-wide text-slate-500">
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </th>
                 ))}
@@ -48,11 +48,11 @@ export function DataTable<T>({ data, columns, search = "", pageSize = 30, onRowC
               table.getRowModel().rows.map((row, index) => (
                 <tr
                   key={row.id}
-                  className={`border-b border-slate-100 transition hover:bg-bank-soft/60 ${index === 0 ? "bg-bank-soft/35" : ""} ${onRowClick ? "cursor-pointer" : ""}`}
+                  className={`border-b border-slate-100 bg-white transition hover:bg-slate-50 ${onRowClick ? "cursor-pointer" : ""}`}
                   onClick={() => onRowClick?.(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="whitespace-nowrap px-4 py-3 text-slate-800">
+                    <td key={cell.id} className="px-5 py-4 align-top text-slate-800">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}

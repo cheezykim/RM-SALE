@@ -1,13 +1,14 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { Download, Plus, Search, Users } from "lucide-react";
+import { Download, Eye, Plus, Search, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { DataTable } from "../components/DataTable";
 import { VisitCustomerDrawer } from "../components/VisitCustomerDrawer";
+import { LeadBadge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { useAddPotential } from "../hooks/useCrmData";
 import type { User, VisitCustomer } from "../types";
 
-const columnsList = ["Sender_Name", "Name", "Tel", "Rank", "Business", "Purpose", "Amount", "Interest", "Loan_Type", "Tenure", "Maturity", "Remark"];
+const exportColumns = ["Sender_Name", "Name", "Tel", "Rank", "Business", "Purpose", "Amount", "Interest", "Loan_Type", "Tenure", "Maturity", "Remark", "Source_Channel", "Message_Date"];
 
 export function MarketVisit({ user, visits }: { user: User; visits: VisitCustomer[] }) {
   const [query, setQuery] = useState("");
@@ -39,24 +40,88 @@ export function MarketVisit({ user, visits }: { user: User; visits: VisitCustome
   }, [visits, potential, source, dateFilter, startDate, endDate, query]);
 
   const columns: ColumnDef<VisitCustomer>[] = [
-    ...columnsList.map((key) => ({ accessorKey: key, header: label(key) })),
+    {
+      accessorKey: "Name",
+      header: "Customer",
+      cell: ({ row }) => (
+        <div className="min-w-[210px]">
+          <div className="font-extrabold text-slate-950">{safeText(row.original.Name, "Unnamed customer")}</div>
+          <div className="mt-1 text-xs font-medium text-muted">{safeText(row.original.Tel, "No phone")}</div>
+          <div className="mt-2 inline-flex rounded-md bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">{safeText(row.original.Sender_Name, "Market Visit")}</div>
+        </div>
+      )
+    },
+    {
+      accessorKey: "Business",
+      header: "Business Profile",
+      cell: ({ row }) => (
+        <div className="min-w-[190px]">
+          <div className="font-bold text-slate-900">{safeText(row.original.Business, "-")}</div>
+          <div className="mt-1 text-xs text-muted">Rank: {safeText(row.original.Rank, "-")}</div>
+          <div className="mt-1 max-w-[220px] truncate text-xs text-muted">{safeText(row.original.Purpose, "No purpose recorded")}</div>
+        </div>
+      )
+    },
+    {
+      accessorKey: "Amount",
+      header: "Facility Request",
+      cell: ({ row }) => (
+        <div className="min-w-[170px]">
+          <div className="font-extrabold text-bank-dark">{safeText(row.original.Amount, "-")}</div>
+          <div className="mt-1 text-xs font-medium text-slate-700">{safeText(row.original.Loan_Type, "Loan type not set")}</div>
+          <div className="mt-1 text-xs text-muted">Interest: {safeText(row.original.Interest, "-")}</div>
+        </div>
+      )
+    },
+    {
+      accessorKey: "Tenure",
+      header: "Timeline",
+      cell: ({ row }) => (
+        <div className="min-w-[130px] text-sm">
+          <div className="font-bold text-slate-900">{safeText(row.original.Tenure, "-")}</div>
+          <div className="mt-1 text-xs text-muted">Maturity: {safeText(row.original.Maturity, "-")}</div>
+        </div>
+      )
+    },
+    {
+      accessorKey: "Potential_Level",
+      header: "Signal",
+      cell: ({ row }) => (
+        <div className="min-w-[150px]">
+          <LeadBadge level={String(row.original.Potential_Level || "Hot")} />
+          <div className="mt-2 text-xs text-muted">{safeText(row.original.Source_Channel, "Market Visit")}</div>
+          <div className="mt-1 text-xs text-muted">{formatDate(row.original.Message_Date)}</div>
+        </div>
+      )
+    },
+    {
+      accessorKey: "Remark",
+      header: "Remark",
+      cell: ({ row }) => <div className="max-w-[240px] text-sm leading-5 text-slate-700">{safeText(row.original.Remark, "-")}</div>
+    },
     {
       id: "Action",
       header: "Action",
       cell: ({ row }) => (
-        <Button
-          variant="outline"
-          className="h-8 text-bank"
-          onClick={async (event) => {
-            event.stopPropagation();
-            const result = await addPotential.mutateAsync(row.original);
-            setMessage(result.message);
-          }}
-          disabled={addPotential.isPending}
-        >
-          <Plus className="h-4 w-4" />
-          Add Potential
-        </Button>
+        <div className="flex min-w-[170px] gap-2">
+          <Button variant="outline" className="h-8 px-3 text-bank" onClick={(event) => { event.stopPropagation(); setSelected(row.original); }}>
+            <Eye className="h-4 w-4" />
+            View
+          </Button>
+          <Button
+            variant="outline"
+            className="h-8 px-3 text-bank"
+            onClick={async (event) => {
+              event.stopPropagation();
+              const result = await addPotential.mutateAsync(row.original);
+              setMessage(result.message);
+            }}
+            disabled={addPotential.isPending}
+          >
+            <Plus className="h-4 w-4" />
+            Add
+          </Button>
+        </div>
       )
     }
   ];
@@ -135,12 +200,18 @@ function unique(values: string[]) {
   return Array.from(new Set(values.filter((value) => value && value !== "nan"))).sort();
 }
 
-function label(key: string) {
-  return key.replace(/_/g, " ").replace("Tel", "Phone");
+function safeText(value: unknown, fallback = "") {
+  const text = String(value ?? "").trim();
+  return text && text.toLowerCase() !== "nan" ? text : fallback;
+}
+
+function formatDate(value: unknown) {
+  const text = safeText(value);
+  return text ? text.slice(0, 10) : "No date";
 }
 
 function exportCsv(rows: VisitCustomer[], filename: string) {
-  const csv = [columnsList.join(","), ...rows.map((row) => columnsList.map((key) => JSON.stringify(row[key] ?? "")).join(","))].join("\n");
+  const csv = [exportColumns.join(","), ...rows.map((row) => exportColumns.map((key) => JSON.stringify(row[key] ?? "")).join(","))].join("\n");
   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
   const a = document.createElement("a");
   a.href = url;
