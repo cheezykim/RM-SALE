@@ -1,23 +1,29 @@
 import { Plus, UserRound, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { VisitCustomer } from "../types";
 import { Button } from "./ui/Button";
 import { LeadBadge } from "./ui/Badge";
 
 const products = ["SME Loan", "Housing Loan", "Auto Loan", "Working Capital Loan"];
+const tabs = ["Overview", "Remark", "Notes", "Activities"] as const;
 
 export function VisitCustomerDrawer({
   customer,
   onClose,
   onAddPotential,
-  saving
+  saving,
+  initialTab = "Overview"
 }: {
   customer: VisitCustomer | null;
   onClose: () => void;
   onAddPotential: (customer: VisitCustomer) => Promise<void>;
   saving?: boolean;
+  initialTab?: "Overview" | "Remark" | "Notes" | "Activities";
 }) {
-  const [tab, setTab] = useState("Overview");
+  const [tab, setTab] = useState(initialTab);
+  useEffect(() => {
+    setTab(initialTab);
+  }, [customer, initialTab]);
   const selectedProducts = useMemo(() => {
     const raw = String(customer?.Potential_Product || customer?.Potential_Products || "SME Loan, Housing Loan");
     return raw.split(",").map((item) => item.trim()).filter(Boolean);
@@ -52,7 +58,7 @@ export function VisitCustomerDrawer({
 
           <div className="border-b border-border px-6">
             <div className="flex gap-6">
-              {["Overview", "Remark", "Notes", "Activities"].map((item) => (
+              {tabs.map((item) => (
                 <button
                   key={item}
                   onClick={() => setTab(item)}

@@ -3,7 +3,7 @@ import { Download, Eye, Plus, Search, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { DataTable } from "../components/DataTable";
 import { VisitCustomerDrawer } from "../components/VisitCustomerDrawer";
-import { LeadBadge } from "../components/ui/Badge";
+import { LeadBadge, normalizeLeadLevel } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { useAddPotential } from "../hooks/useCrmData";
 import type { User, VisitCustomer } from "../types";
@@ -19,14 +19,15 @@ export function MarketVisit({ user, visits }: { user: User; visits: VisitCustome
   const [endDate, setEndDate] = useState("");
   const [message, setMessage] = useState("");
   const [selected, setSelected] = useState<VisitCustomer | null>(null);
+  const [detailTab, setDetailTab] = useState<"Overview" | "Remark" | "Notes" | "Activities">("Overview");
   const addPotential = useAddPotential(user);
 
-  const potentialOptions = ["All", ...unique(visits.map((item) => item.Potential_Level as string))];
+  const potentialOptions = ["All", "H", "M", "L"];
   const sourceOptions = ["All", ...unique(visits.map((item) => item.Source_Channel as string))];
 
   const filtered = useMemo(() => {
     return visits.filter((row) => {
-      if (potential !== "All" && row.Potential_Level !== potential) return false;
+      if (potential !== "All" && normalizeLeadLevel(row.Potential_Level) !== potential) return false;
       if (source !== "All" && row.Source_Channel !== source) return false;
       if (dateFilter === "Today" && row.Message_Date && !String(row.Message_Date).startsWith(new Date().toISOString().slice(0, 10))) return false;
       if (dateFilter === "Custom Range" && row.Message_Date) {
@@ -95,11 +96,24 @@ export function MarketVisit({ user, visits }: { user: User; visits: VisitCustome
       )
     },
     {
+      accessorKey: "Remark",
+      header: "Remark",
+      cell: ({ row }) => (
+        <div className="max-w-[260px]">
+          <div className="line-clamp-2 text-sm leading-5 text-slate-700">{safeText(row.original.Remark, "No remark recorded.")}</div>
+          <Button variant="ghost" className="mt-2 h-8 px-2 text-bank" onClick={(event) => { event.stopPropagation(); setDetailTab("Remark"); setSelected(row.original); }}>
+            <Eye className="h-4 w-4" />
+            View
+          </Button>
+        </div>
+      )
+    },
+    {
       id: "Action",
       header: "Action",
       cell: ({ row }) => (
         <div className="flex min-w-[170px] gap-2">
-          <Button variant="outline" className="h-8 px-3 text-bank" onClick={(event) => { event.stopPropagation(); setSelected(row.original); }}>
+          <Button variant="outline" className="h-8 px-3 text-bank" onClick={(event) => { event.stopPropagation(); setDetailTab("Overview"); setSelected(row.original); }}>
             <Eye className="h-4 w-4" />
             View
           </Button>
@@ -165,8 +179,8 @@ export function MarketVisit({ user, visits }: { user: User; visits: VisitCustome
 
       <div className="rounded-md bg-blue-50 px-4 py-3 text-sm font-bold text-blue-700">Showing {filtered.length.toLocaleString()} customers</div>
       {message && <div className="rounded-md bg-bank-soft px-4 py-3 text-sm font-bold text-bank-dark">{message}</div>}
-      <DataTable data={filtered} columns={columns} search={query} onRowClick={setSelected} />
-      <VisitCustomerDrawer customer={selected} onClose={() => setSelected(null)} onAddPotential={addSelected} saving={addPotential.isPending} />
+      <DataTable data={filtered} columns={columns} search={query} onRowClick={(customer) => { setDetailTab("Overview"); setSelected(customer); }} />
+      <VisitCustomerDrawer customer={selected} initialTab={detailTab} onClose={() => setSelected(null)} onAddPotential={addSelected} saving={addPotential.isPending} />
     </section>
   );
 }

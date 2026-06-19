@@ -3,11 +3,12 @@ import { Download, Eye, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { DataTable } from "../components/DataTable";
 import { CustomerDrawer } from "../components/CustomerDrawer";
-import { LeadBadge, StatusBadge } from "../components/ui/Badge";
+import { LeadBadge, normalizeLeadLevel, StatusBadge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import type { PotentialCustomer } from "../types";
 
 const exportColumns = ["Name", "Tel", "Business", "Purpose", "Amount", "Interest", "Loan_Type", "Tenure", "Maturity", "Status", "Potential_Level", "Next_Follow_Up", "Date_Added", "Source_Channel", "Notes"];
+type DetailTab = "Overview" | "Remark" | "Notes" | "Activities";
 
 export function PotentialCustomers({
   potentials,
@@ -21,6 +22,7 @@ export function PotentialCustomers({
   const [level, setLevel] = useState("All");
   const [dateFilter, setDateFilter] = useState("All");
   const [selected, setSelected] = useState<PotentialCustomer | null>(null);
+  const [detailTab, setDetailTab] = useState<DetailTab>("Overview");
 
   const filtered = useMemo(() => {
     const today = new Date();
@@ -28,7 +30,7 @@ export function PotentialCustomers({
     sevenDaysAgo.setDate(today.getDate() - 7);
     return potentials.filter((row) => {
       if (status !== "All" && row.Status !== status) return false;
-      if (level !== "All" && row.Potential_Level !== level) return false;
+      if (level !== "All" && normalizeLeadLevel(row.Potential_Level) !== level) return false;
       const added = row.Date_Added ? new Date(row.Date_Added) : null;
       if (dateFilter === "Today" && row.Date_Added !== today.toISOString().slice(0, 10)) return false;
       if (dateFilter === "Last 7 Days" && (!added || added < sevenDaysAgo)) return false;
@@ -56,7 +58,7 @@ export function PotentialCustomers({
       cell: ({ row }) => (
         <div className="min-w-[220px]">
           <div className="font-bold text-slate-900">{safeText(row.original.Business, "-")}</div>
-          <div className="mt-1 text-xs text-muted">Bank: {safeText(row.original.Bank, row.original.Rank || "-")}</div>
+          <div className="mt-1 text-xs text-muted">Bank: {safeText(row.original.Bank, "-")}</div>
           <div className="mt-1 max-w-[260px] truncate text-xs text-muted">{safeText(row.original.Purpose, "No purpose recorded")}</div>
         </div>
       )
@@ -78,9 +80,13 @@ export function PotentialCustomers({
       cell: ({ row }) => (
         <div className="min-w-[150px] space-y-2">
           <StatusBadge status={row.original.Status} />
-          <LeadBadge level={row.original.Potential_Level} />
         </div>
       )
+    },
+    {
+      accessorKey: "Potential_Level",
+      header: "Signal",
+      cell: ({ row }) => <LeadBadge level={row.original.Potential_Level} />
     },
     {
       accessorKey: "Next_Follow_Up",
@@ -93,9 +99,25 @@ export function PotentialCustomers({
       )
     },
     {
-      accessorKey: "Notes",
-      header: "Latest Notes",
-      cell: ({ row }) => <div className="max-w-[260px] text-sm leading-5 text-slate-700">{safeText(row.original.Notes, "-")}</div>
+      accessorKey: "Remark",
+      header: "Remark",
+      cell: ({ row }) => (
+        <div className="max-w-[260px]">
+          <div className="line-clamp-2 text-sm leading-5 text-slate-700">{safeText(row.original.Remark, "No remark recorded.")}</div>
+          <Button
+            variant="ghost"
+            className="mt-2 h-8 px-2 text-bank"
+            onClick={(event) => {
+              event.stopPropagation();
+              setDetailTab("Remark");
+              setSelected(row.original);
+            }}
+          >
+            <Eye className="h-4 w-4" />
+            View
+          </Button>
+        </div>
+      )
     },
     {
       id: "Action",
@@ -106,6 +128,7 @@ export function PotentialCustomers({
           className="h-8"
           onClick={(event) => {
             event.stopPropagation();
+            setDetailTab("Overview");
             setSelected(row.original);
           }}
         >
@@ -132,7 +155,7 @@ export function PotentialCustomers({
             </div>
           </div>
           <Select label="Status" value={status} options={["All", ...Array.from(new Set(potentials.map((row) => row.Status).filter(Boolean)))]} onChange={setStatus} />
-          <Select label="Potential Level" value={level} options={["All", "Hot", "Warm", "Cold"]} onChange={setLevel} />
+          <Select label="Signal" value={level} options={["All", "H", "M", "L"]} onChange={setLevel} />
           <Select label="Date Added" value={dateFilter} options={["All", "Today", "Last 7 Days", "This Month"]} onChange={setDateFilter} />
           <div className="flex items-end">
             <Button variant="outline" onClick={() => exportCsv(filtered, "potential_customers.csv")}>
@@ -143,9 +166,10 @@ export function PotentialCustomers({
         </div>
       </div>
       <div className="rounded-md bg-bank-soft px-4 py-3 text-sm font-bold text-bank-dark">Showing {filtered.length.toLocaleString()} potential customers</div>
-      <DataTable data={filtered} columns={columns} search={query} onRowClick={setSelected} />
+      <DataTable data={filtered} columns={columns} search={query} onRowClick={(customer) => { setDetailTab("Overview"); setSelected(customer); }} />
       <CustomerDrawer
         customer={selected}
+        initialTab={detailTab}
         onClose={() => setSelected(null)}
         onSave={async (updates) => {
           if (!selected) return;

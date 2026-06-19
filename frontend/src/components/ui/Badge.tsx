@@ -1,13 +1,7 @@
-import { Flame } from "lucide-react";
 import { cn } from "../../lib/utils";
 
 export function LeadBadge({ level }: { level?: string }) {
-  const normalized = (level || "").toLowerCase();
-  const label = normalized.includes("warm") || normalized === "m" || normalized.includes("medium")
-    ? "M"
-    : normalized.includes("cold") || normalized === "l" || normalized.includes("low")
-      ? "L"
-      : "H";
+  const label = normalizeLeadLevel(level);
   const title = label === "H" ? "High potential" : label === "M" ? "Medium potential" : "Low potential";
   const color =
     label === "H"
@@ -17,11 +11,17 @@ export function LeadBadge({ level }: { level?: string }) {
         : "bg-slate-100 text-slate-600";
 
   return (
-    <span className={cn("inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-bold", color)} title={title}>
-      {label === "H" && <Flame className="h-3.5 w-3.5" />}
-      {label} <span className="font-semibold opacity-80">{title.replace(" potential", "")}</span>
+    <span className={cn("inline-flex min-w-8 items-center justify-center rounded-md px-2.5 py-1 text-xs font-extrabold", color)} title={title}>
+      {label}
     </span>
   );
+}
+
+export function normalizeLeadLevel(level?: string) {
+  const normalized = (level || "").trim().toLowerCase();
+  if (normalized.includes("warm") || normalized === "m" || normalized.includes("medium")) return "M";
+  if (normalized.includes("cold") || normalized === "l" || normalized.includes("low")) return "L";
+  return "H";
 }
 
 export function StatusBadge({ status }: { status?: string }) {

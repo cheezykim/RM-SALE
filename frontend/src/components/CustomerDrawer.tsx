@@ -2,40 +2,44 @@ import { X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { PotentialCustomer } from "../types";
 import { Button } from "./ui/Button";
-import { LeadBadge, StatusBadge } from "./ui/Badge";
+import { LeadBadge, normalizeLeadLevel, StatusBadge } from "./ui/Badge";
 
 const statuses = ["Interested", "Follow Up", "Proposal Sent", "Document Collection", "Negotiation", "Converted", "Lost"];
-const levels = ["Hot", "Warm", "Cold"];
+const levels = ["H", "M", "L"];
 const products = ["SME Loan", "Housing Loan", "Auto Loan", "Working Capital Loan", "Other Products"];
+const tabs = ["Overview", "Remark", "Notes", "Activities"] as const;
 
 export function CustomerDrawer({
   customer,
   onClose,
-  onSave
+  onSave,
+  initialTab = "Overview"
 }: {
   customer: PotentialCustomer | null;
   onClose: () => void;
   onSave: (updates: Record<string, unknown>) => Promise<void>;
+  initialTab?: "Overview" | "Remark" | "Notes" | "Activities";
 }) {
-  const [tab, setTab] = useState("Overview");
+  const [tab, setTab] = useState(initialTab);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     Status: customer?.Status || "Interested",
-    Potential_Level: customer?.Potential_Level || "Hot",
+    Potential_Level: normalizeLeadLevel(customer?.Potential_Level),
     Next_Follow_Up: customer?.Next_Follow_Up || "",
     Potential_Products: customer?.Potential_Products || "SME Loan",
     Notes: customer?.Notes || ""
   });
 
   useEffect(() => {
+    setTab(initialTab);
     setForm({
       Status: customer?.Status || "Interested",
-      Potential_Level: customer?.Potential_Level || "Hot",
+      Potential_Level: normalizeLeadLevel(customer?.Potential_Level),
       Next_Follow_Up: customer?.Next_Follow_Up || "",
       Potential_Products: customer?.Potential_Products || "SME Loan",
       Notes: customer?.Notes || ""
     });
-  }, [customer]);
+  }, [customer, initialTab]);
 
   const selectedProducts = useMemo(() => form.Potential_Products.split(",").map((value) => value.trim()).filter(Boolean), [form.Potential_Products]);
 
@@ -81,7 +85,7 @@ export function CustomerDrawer({
 
         <div className="border-b border-border px-6">
           <div className="flex gap-6">
-            {["Overview", "Notes", "Activities"].map((item) => (
+            {tabs.map((item) => (
               <button
                 key={item}
                 onClick={() => setTab(item)}
@@ -100,7 +104,7 @@ export function CustomerDrawer({
                 ["Business", customer.Business],
                 ["Phone", customer.Tel],
                 ["Brand", customer.Sender_Name],
-                ["Bank", customer.Bank || customer.Rank],
+                ["Bank", customer.Bank],
                 ["Source Channel", customer.Source_Channel]
               ]} />
               <InfoCard title="Loan Information" rows={[
@@ -133,6 +137,7 @@ export function CustomerDrawer({
               onChange={(event) => setForm({ ...form, Notes: event.target.value })}
             />
           )}
+          {tab === "Remark" && <InfoPanel text={String(customer.Remark || "No remark recorded.")} />}
           {tab === "Activities" && (
             <div className="space-y-3">
               {(customer.Activities || "").split("\n").filter(Boolean).map((activity) => (
@@ -174,7 +179,11 @@ export function CustomerDrawer({
   );
 }
 
-function InfoCard({ title, rows }: { title: string; rows: Array<[string, string]> }) {
+function InfoPanel({ text }: { text: string }) {
+  return <div className="crm-card whitespace-pre-wrap p-4 text-sm leading-6 text-slate-700">{text}</div>;
+}
+
+function InfoCard({ title, rows }: { title: string; rows: Array<[string, unknown]> }) {
   return (
     <div className="crm-card p-4">
       <h3 className="mb-3 text-sm font-extrabold">{title}</h3>
@@ -182,7 +191,7 @@ function InfoCard({ title, rows }: { title: string; rows: Array<[string, string]
         {rows.map(([label, value]) => (
           <div key={label} className="grid grid-cols-2 gap-4 py-2 text-sm">
             <span className="text-muted">{label}</span>
-            <strong>{value || "-"}</strong>
+            <strong>{String(value || "-")}</strong>
           </div>
         ))}
       </div>
