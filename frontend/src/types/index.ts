@@ -19,6 +19,7 @@ export type VisitCustomer = {
   Loan_Type?: string;
   Tenure?: string;
   Maturity?: string;
+  Remark?: string;
   Potential_Level?: string;
   Potential_Product?: string;
   Potential_Products?: string;

@@ -7,7 +7,7 @@ import { Button } from "../components/ui/Button";
 import { useAddPotential } from "../hooks/useCrmData";
 import type { User, VisitCustomer } from "../types";
 
-const columnsList = ["Sender_Name", "Name", "Tel", "Rank", "Business", "Purpose", "Amount", "Interest", "Loan_Type", "Tenure", "Maturity"];
+const columnsList = ["Sender_Name", "Name", "Tel", "Rank", "Business", "Purpose", "Amount", "Interest", "Loan_Type", "Tenure", "Maturity", "Remark"];
 
 export function MarketVisit({ user, visits }: { user: User; visits: VisitCustomer[] }) {
   const [query, setQuery] = useState("");
