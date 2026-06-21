@@ -12,13 +12,19 @@
 !frontend/tsconfig.node.json
 
 .DS_Store
-__pycache__/
+**pycache**/
 *.py[cod]
 *.log
+.env
+.env.*
+!.env.example
+env.vercel
 
 frontend/node_modules/
 frontend/dist/
 frontend/*.tsbuildinfo
 
 frontend/vite.config.js
-frontend/vite.config.d.ts 
+frontend/vite.config.d.ts
+
+.vercel

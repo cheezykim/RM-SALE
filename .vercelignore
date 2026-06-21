@@ -1,0 +1,29 @@
+.git
+.agents
+.devcontainer
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.log
+.DS_Store
+
+# Local secrets and service account files must live in Vercel Environment Variables.
+*.json
+!.devcontainer/*.json
+!frontend/package.json
+!frontend/package-lock.json
+!frontend/tsconfig.json
+!frontend/tsconfig.node.json
+
+# Generated frontend artifacts.
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
+
+# Legacy local/Streamlit scripts are not needed by the Vercel API bundle.
+Merchant_Delivery.py
+plan_II.py
+plan_checker.py
+requirements-legacy.txt
