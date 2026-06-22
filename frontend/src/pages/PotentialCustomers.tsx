@@ -112,18 +112,6 @@ export function PotentialCustomers({
       cell: ({ row }) => (
         <div className="max-w-[260px]">
           <div className="line-clamp-2 text-sm leading-5 text-slate-700">{safeText(row.original.Remark, "No remark recorded.")}</div>
-          <Button
-            variant="ghost"
-            className="mt-2 h-8 px-2 text-bank"
-            onClick={(event) => {
-              event.stopPropagation();
-              setDetailTab("Remark");
-              setSelected(row.original);
-            }}
-          >
-            <Eye className="h-4 w-4" />
-            View
-          </Button>
         </div>
       )
     },
@@ -136,12 +124,12 @@ export function PotentialCustomers({
           className="h-8"
           onClick={(event) => {
             event.stopPropagation();
-            setDetailTab("Overview");
+            setDetailTab("Remark");
             setSelected(row.original);
           }}
         >
           <Eye className="h-4 w-4" />
-          View
+          View Remark
         </Button>
       )
     }
