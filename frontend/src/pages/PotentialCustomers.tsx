@@ -1,19 +1,22 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { Download, Eye, Search } from "lucide-react";
+import { Bell, Download, Eye, Plus, Search, Sparkles, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { DataTable } from "../components/DataTable";
 import { CustomerDrawer } from "../components/CustomerDrawer";
 import { LeadBadge, normalizeLeadLevel, StatusBadge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
-import type { PotentialCustomer } from "../types";
+import { useAddPotential } from "../hooks/useCrmData";
+import type { PotentialCustomer, User, VisitCustomer } from "../types";
 
-const exportColumns = ["Name", "Tel", "Business", "Purpose", "Amount", "Interest", "Loan_Type", "Tenure", "Maturity", "Status", "Potential_Level", "Next_Follow_Up", "Date_Added", "Source_Channel", "Notes"];
+const exportColumns = ["Name", "Tel", "Business", "Purpose", "Bank", "Amount", "Interest", "Loan_Type", "Tenure", "Maturity", "Status", "Potential_Level", "Potential_Products", "Next_Follow_Up", "Date_Added", "Source_Type", "Source_Channel", "Remark", "Notes"];
 type DetailTab = "Overview" | "Remark" | "Notes" | "Activities";
 
 export function PotentialCustomers({
+  user,
   potentials,
   onSave
 }: {
+  user: User;
   potentials: PotentialCustomer[];
   onSave: (customer: PotentialCustomer, updates: Record<string, unknown>) => Promise<void>;
 }) {
@@ -23,6 +26,9 @@ export function PotentialCustomers({
   const [dateFilter, setDateFilter] = useState("All");
   const [selected, setSelected] = useState<PotentialCustomer | null>(null);
   const [detailTab, setDetailTab] = useState<DetailTab>("Overview");
+  const [addOpen, setAddOpen] = useState(false);
+  const [message, setMessage] = useState("");
+  const addPotential = useAddPotential(user);
 
   const filtered = useMemo(() => {
     const today = new Date();
@@ -48,7 +54,9 @@ export function PotentialCustomers({
         <div className="min-w-[210px]">
           <div className="font-extrabold text-slate-950">{safeText(row.original.Name, "Unnamed customer")}</div>
           <div className="mt-1 text-xs font-medium text-muted">{safeText(row.original.Tel, "No phone")}</div>
-          <div className="mt-2 inline-flex rounded-md bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">Brand: {safeText(row.original.Sender_Name, row.original.Source_Channel || "Market Visit")}</div>
+          <div className="mt-2 inline-flex rounded-md bg-bank-soft px-2 py-1 text-[11px] font-bold text-bank-dark">
+            Source: {safeText(row.original.Source_Type, row.original.Source_Channel || row.original.Sender_Name || "Market Visit")}
+          </div>
         </div>
       )
     },
@@ -142,9 +150,23 @@ export function PotentialCustomers({
   return (
     <section className="space-y-5">
       <div>
-        <h2 className="text-2xl font-extrabold">My Potential Customers</h2>
-        <p className="mt-1 text-sm text-muted">List of customers you have marked as potential.</p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="text-2xl font-extrabold">My Potential Customers</h2>
+            <p className="mt-1 text-sm text-muted">List of customers you have marked as potential.</p>
+          </div>
+          <Button onClick={() => setAddOpen(true)} className="sm:w-auto">
+            <Plus className="h-4 w-4" />
+            Add Customer
+          </Button>
+        </div>
       </div>
+      {message && (
+        <div className="flex items-start gap-3 rounded-md border border-bank/20 bg-bank-soft px-4 py-3 text-sm font-bold text-bank-dark">
+          <Bell className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>{message}</span>
+        </div>
+      )}
       <div className="crm-card p-4">
         <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr_1fr_1fr_auto]">
           <div>
@@ -177,7 +199,166 @@ export function PotentialCustomers({
           setSelected(null);
         }}
       />
+      <AddCustomerDrawer
+        open={addOpen}
+        saving={addPotential.isPending}
+        onClose={() => setAddOpen(false)}
+        onSubmit={async (customer) => {
+          const result = await addPotential.mutateAsync(customer);
+          setMessage(`${result.message} Source recorded as ${safeText(customer.Source_Type, "Manual Entry")}.`);
+          if (result.ok) setAddOpen(false);
+        }}
+      />
     </section>
+  );
+}
+
+const initialManualCustomer: VisitCustomer = {
+  Name: "",
+  Tel: "",
+  Business: "",
+  Purpose: "",
+  Bank: "",
+  Amount: "",
+  Interest: "",
+  Loan_Type: "",
+  Tenure: "",
+  Maturity: "",
+  Potential_Level: "H",
+  Potential_Product: "SME Loan",
+  Remark: "",
+  Source_Type: "",
+  Source_Channel: "",
+  Sender_Name: "Manual Entry"
+};
+
+function AddCustomerDrawer({
+  open,
+  saving,
+  onClose,
+  onSubmit
+}: {
+  open: boolean;
+  saving: boolean;
+  onClose: () => void;
+  onSubmit: (customer: VisitCustomer) => Promise<void>;
+}) {
+  const [form, setForm] = useState<VisitCustomer>(initialManualCustomer);
+  const canSubmit = Boolean(safeText(form.Name) && safeText(form.Tel) && safeText(form.Source_Type));
+
+  if (!open) return null;
+
+  function update(key: keyof VisitCustomer, value: string) {
+    setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  async function submit() {
+    const source = safeText(form.Source_Type, "Manual Entry");
+    await onSubmit({
+      ...form,
+      Source_Type: source,
+      Source_Channel: source,
+      Sender_Name: "Manual Entry"
+    });
+    setForm(initialManualCustomer);
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-950/20 backdrop-blur-sm" onClick={onClose}>
+      <aside
+        className="ml-auto flex h-full w-full max-w-[760px] animate-slide-in-right flex-col border-l border-border bg-white/95 shadow-drawer"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="border-b border-border p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-bank-soft text-bank-dark">
+                <Sparkles className="h-6 w-6" />
+              </div>
+              <div>
+                <h2 className="text-xl font-extrabold text-slate-950">Add Customer</h2>
+                <p className="mt-1 text-sm text-muted">Create a clean banking CRM record with source visibility for follow up.</p>
+              </div>
+            </div>
+            <Button variant="ghost" className="h-9 w-9 p-0" onClick={onClose}>
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="mb-5 rounded-md border border-bank/20 bg-bank-soft px-4 py-3 text-sm font-semibold text-bank-dark">
+            <div className="flex items-start gap-3">
+              <Bell className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>Sales source is required so the team can identify where this customer came from.</span>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <TextField label="Name" value={form.Name} onChange={(value) => update("Name", value)} required />
+            <TextField label="Tel" value={form.Tel} onChange={(value) => update("Tel", value)} required />
+            <TextField label="Business" value={form.Business} onChange={(value) => update("Business", value)} />
+            <TextField label="Purpose" value={form.Purpose} onChange={(value) => update("Purpose", value)} />
+            <TextField label="Bank" value={form.Bank} onChange={(value) => update("Bank", value)} />
+            <TextField label="Amount" value={form.Amount} onChange={(value) => update("Amount", value)} placeholder="USD 50,000" />
+            <TextField label="Interest" value={form.Interest} onChange={(value) => update("Interest", value)} placeholder="8.5%" />
+            <TextField label="Loan Type" value={form.Loan_Type} onChange={(value) => update("Loan_Type", value)} placeholder="Working Capital Loan" />
+            <TextField label="Tenure" value={form.Tenure} onChange={(value) => update("Tenure", value)} placeholder="36 months" />
+            <TextField label="Maturity" value={form.Maturity} onChange={(value) => update("Maturity", value)} placeholder="2029" />
+            <Select label="Potential H/M/L" value={safeText(form.Potential_Level, "H")} options={["H", "M", "L"]} onChange={(value) => update("Potential_Level", value)} />
+            <TextField label="Potential Product" value={form.Potential_Product} onChange={(value) => update("Potential_Product", value)} placeholder="SME Loan" />
+            <TextField label="Source Type" value={form.Source_Type} onChange={(value) => update("Source_Type", value)} placeholder="Referral, branch walk-in, event..." required />
+            <div className="rounded-md border border-dashed border-bank/30 bg-white p-4">
+              <p className="text-xs font-extrabold uppercase tracking-wide text-bank-dark">Source Notice</p>
+              <p className="mt-2 text-sm font-semibold text-slate-700">
+                This customer will be saved as coming from {safeText(form.Source_Type, "the source you type")}.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <label className="label">Remark</label>
+            <textarea
+              className="min-h-28 w-full rounded-md border border-border bg-white px-3 py-3 text-sm outline-none transition focus:border-bank focus:ring-2 focus:ring-bank/15"
+              value={safeText(form.Remark)}
+              onChange={(event) => update("Remark", event.target.value)}
+              placeholder="Add customer background, collateral notes, urgency, or relationship context."
+            />
+          </div>
+        </div>
+
+        <div className="border-t border-border bg-white p-6">
+          <div className="grid grid-cols-2 gap-3">
+            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <Button onClick={submit} disabled={!canSubmit || saving}>
+              <Plus className="h-4 w-4" />
+              {saving ? "Adding..." : "Add Customer"}
+            </Button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+function TextField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  required
+}: {
+  label: string;
+  value: unknown;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  required?: boolean;
+}) {
+  return (
+    <div>
+      <label className="label">{label}{required ? " *" : ""}</label>
+      <input className="input-control" value={safeText(value)} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} />
+    </div>
   );
 }
 

@@ -27,6 +27,7 @@ CRM_COLUMNS = [
     "Name",
     "Tel",
     "Rank",
+    "Bank",
     "Business",
     "Purpose",
     "Amount",
@@ -34,11 +35,13 @@ CRM_COLUMNS = [
     "Loan_Type",
     "Tenure",
     "Maturity",
+    "Source_Type",
     "Source_Channel",
     "Status",
     "Potential_Level",
     "Next_Follow_Up",
     "Potential_Products",
+    "Remark",
     "Notes",
     "Activities",
     "Documents",
@@ -309,6 +312,7 @@ def add_potential_customer(row: dict[str, Any], user: dict[str, Any]) -> tuple[b
         "Name": row.get("Name", ""),
         "Tel": row.get("Tel", ""),
         "Rank": row.get("Rank", row.get("Bank", "")),
+        "Bank": row.get("Bank", ""),
         "Business": row.get("Business", ""),
         "Purpose": row.get("Purpose", ""),
         "Amount": row.get("Amount", ""),
@@ -316,17 +320,20 @@ def add_potential_customer(row: dict[str, Any], user: dict[str, Any]) -> tuple[b
         "Loan_Type": row.get("Loan_Type", ""),
         "Tenure": row.get("Tenure", ""),
         "Maturity": row.get("Maturity", ""),
-        "Source_Channel": row.get("Source_Channel", "Market Visit"),
+        "Source_Type": row.get("Source_Type", row.get("Source_Channel", "Market Visit")),
+        "Source_Channel": row.get("Source_Channel", row.get("Source_Type", "Market Visit")),
         "Status": "Interested",
         "Potential_Level": lead_label(row.get("Potential_Level", "Hot")),
         "Next_Follow_Up": "",
-        "Potential_Products": row.get("Potential_Product", "SME Loan"),
+        "Potential_Products": row.get("Potential_Product", row.get("Potential_Products", "SME Loan")),
+        "Remark": row.get("Remark", ""),
         "Notes": "",
-        "Activities": f"{today_cambodia().strftime('%d %b %Y')} - Added To Potential",
+        "Activities": f"{today_cambodia().strftime('%d %b %Y')} - Added To Potential from {safe_text(row.get('Source_Type', row.get('Source_Channel', 'Market Visit'))) or 'Market Visit'}",
         "Documents": "",
         "Last_Updated": now_text,
     }
-    worksheet.append_row([record.get(col, "") for col in CRM_COLUMNS])
+    headers = worksheet.row_values(1) or CRM_COLUMNS
+    worksheet.append_row([record.get(col, "") for col in headers])
     return True, "Customer successfully added to My Potential Customers."
 
 

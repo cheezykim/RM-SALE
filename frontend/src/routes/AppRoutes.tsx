@@ -49,6 +49,7 @@ function AuthenticatedRoutes() {
               loading
             ) : (
               <PotentialCustomers
+                user={user}
                 potentials={data.potentials}
                 onSave={async (customer, updates) => {
                   await updatePotential.mutateAsync({ rowNumber: customer._row_number, updates });
@@ -65,4 +66,3 @@ function AuthenticatedRoutes() {
     </Routes>
   );
 }
-

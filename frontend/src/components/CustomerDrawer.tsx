@@ -105,6 +105,7 @@ export function CustomerDrawer({
                 ["Phone", customer.Tel],
                 ["Brand", customer.Sender_Name],
                 ["Bank", customer.Bank],
+                ["Source Type", customer.Source_Type],
                 ["Source Channel", customer.Source_Channel]
               ]} />
               <InfoCard title="Loan Information" rows={[
