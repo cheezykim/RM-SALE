@@ -101,10 +101,6 @@ export function MarketVisit({ user, visits }: { user: User; visits: VisitCustome
       cell: ({ row }) => (
         <div className="max-w-[260px]">
           <div className="line-clamp-2 text-sm leading-5 text-slate-700">{safeText(row.original.Remark, "No remark recorded.")}</div>
-          <Button variant="ghost" className="mt-2 h-8 px-2 text-bank" onClick={(event) => { event.stopPropagation(); setDetailTab("Remark"); setSelected(row.original); }}>
-            <Eye className="h-4 w-4" />
-            View
-          </Button>
         </div>
       )
     },
@@ -113,9 +109,13 @@ export function MarketVisit({ user, visits }: { user: User; visits: VisitCustome
       header: "Action",
       cell: ({ row }) => (
         <div className="flex min-w-[170px] gap-2">
-          <Button variant="outline" className="h-8 px-3 text-bank" onClick={(event) => { event.stopPropagation(); setDetailTab("Overview"); setSelected(row.original); }}>
+          <Button
+            variant="outline"
+            className="h-9 rounded-md border-bank/20 bg-white/70 px-3 text-bank-dark shadow-sm backdrop-blur hover:border-bank/35 hover:bg-bank-soft"
+            onClick={(event) => { event.stopPropagation(); setDetailTab("Remark"); setSelected(row.original); }}
+          >
             <Eye className="h-4 w-4" />
-            View
+            View Remark
           </Button>
           <Button
             variant="outline"

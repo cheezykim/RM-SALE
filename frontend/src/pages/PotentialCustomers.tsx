@@ -121,7 +121,7 @@ export function PotentialCustomers({
       cell: ({ row }) => (
         <Button
           variant="outline"
-          className="h-8"
+          className="h-9 rounded-md border-bank/20 bg-white/70 px-3 text-bank-dark shadow-sm backdrop-blur hover:border-bank/35 hover:bg-bank-soft"
           onClick={(event) => {
             event.stopPropagation();
             setDetailTab("Remark");
