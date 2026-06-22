@@ -111,11 +111,11 @@ export function MarketVisit({ user, visits }: { user: User; visits: VisitCustome
         <div className="flex min-w-[170px] gap-2">
           <Button
             variant="outline"
-            className="h-9 rounded-md border-bank/20 bg-white/70 px-3 text-bank-dark shadow-sm backdrop-blur hover:border-bank/35 hover:bg-bank-soft"
+            className="h-9 rounded-md border-bank/20 bg-white/75 px-3 font-extrabold text-bank-dark shadow-sm backdrop-blur transition hover:border-bank/40 hover:bg-bank-soft hover:shadow-md"
             onClick={(event) => { event.stopPropagation(); setDetailTab("Remark"); setSelected(row.original); }}
           >
             <Eye className="h-4 w-4" />
-            View Remark
+            View
           </Button>
           <Button
             variant="outline"
