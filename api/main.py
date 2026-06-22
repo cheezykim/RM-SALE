@@ -29,6 +29,7 @@ class SessionUser(BaseModel):
     username: str
     role: str = "rm"
     branch: str = ""
+    sender_id: str = ""
     allowed_sources: str | list[str] = "all"
 
 
@@ -78,6 +79,7 @@ def login(payload: LoginRequest):
         "username": user.get("username", "Sales Officer"),
         "role": user.get("role", "rm"),
         "branch": user.get("branch", ""),
+        "sender_id": user.get("sender_id", ""),
         "allowed_sources": user.get("allowed_sources", "all"),
         "navigation": crm.NAV_ITEMS,
     }
@@ -86,8 +88,9 @@ def login(payload: LoginRequest):
 @app.post("/api/bootstrap")
 def bootstrap(user: SessionUser):
     try:
-        visits = crm.load_visit_data_for_crm(user_dict(user))
-        potentials = crm.load_potential_customers(user_dict(user))
+        current_user = crm.resolve_session_user(user_dict(user))
+        visits = crm.load_visit_data_for_crm(current_user)
+        potentials = crm.load_potential_customers(current_user)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     return {
@@ -103,8 +106,9 @@ def bootstrap(user: SessionUser):
 @app.post("/api/potentials/add")
 def add_potential(payload: AddPotentialRequest):
     try:
-        ok, message = crm.add_potential_customer(payload.customer, user_dict(payload.user))
-        potentials = crm.load_potential_customers(user_dict(payload.user))
+        current_user = crm.resolve_session_user(user_dict(payload.user))
+        ok, message = crm.add_potential_customer(payload.customer, current_user)
+        potentials = crm.load_potential_customers(current_user)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     return {"ok": ok, "message": message, "potentials": crm.to_records(potentials)}
@@ -122,7 +126,7 @@ def update_potential(payload: UpdatePotentialRequest):
 @app.post("/api/daily-plan")
 def save_daily_plan(payload: DailyPlanRequest):
     try:
-        crm.save_daily_plan_to_sheet(payload.tasks, user_dict(payload.user), payload.plan_date)
+        crm.save_daily_plan_to_sheet(payload.tasks, crm.resolve_session_user(user_dict(payload.user)), payload.plan_date)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     return {"ok": True, "message": "Daily plan submitted."}

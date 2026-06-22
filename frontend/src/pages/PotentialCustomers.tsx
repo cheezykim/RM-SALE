@@ -217,7 +217,8 @@ const initialManualCustomer: VisitCustomer = {
   Remark: "",
   Source_Type: "",
   Source_Channel: "",
-  Sender_Name: "Manual Entry"
+  Sender_Name: "Manual Entry",
+  Entry_Type: "Manual"
 };
 
 function AddCustomerDrawer({
@@ -246,7 +247,8 @@ function AddCustomerDrawer({
       ...form,
       Source_Type: source,
       Source_Channel: source,
-      Sender_Name: "Manual Entry"
+      Sender_Name: "Manual Entry",
+      Entry_Type: "Manual"
     });
     setForm(initialManualCustomer);
   }

@@ -3,6 +3,7 @@ export type User = {
   username: string;
   role: string;
   branch: string;
+  sender_id?: string;
   allowed_sources: "all" | string[];
 };
 
@@ -29,6 +30,7 @@ export type VisitCustomer = {
   Documents?: string;
   Source_Channel?: string;
   Message_Date?: string;
+  Entry_Type?: string;
   [key: string]: unknown;
 };
 

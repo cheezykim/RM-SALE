@@ -16,6 +16,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SHEET_ID = "1wM7DTHizhg_A3h0qV3EhX4os4hk46uolW-ESQSJkgZs"
 WORKSHEET_NAME = "retail_data"
 CRM_SHEET_NAME = "potential_customers"
+NEW_CUSTOMER_SHEET_NAME = "New_customer"
 CAMBODIA_TZ = pytz.timezone("Asia/Phnom_Penh")
 
 CRM_COLUMNS = [
@@ -76,6 +77,18 @@ def safe_text(value: Any) -> str:
     except Exception:
         pass
     return str(value).strip()
+
+
+def first_present_value(row: Any, *keys: str) -> str:
+    for key in keys:
+        value = safe_text(row.get(key, ""))
+        if value:
+            return value
+    return ""
+
+
+def normalize_identifier(value: Any) -> str:
+    return safe_text(value).lower()
 
 
 def lead_label(level: Any) -> str:
@@ -210,6 +223,17 @@ def load_users_from_sheets(gc, sheet_id: str, worksheet_name: str = "Users") -> 
             sources = [source.strip() for source in safe_text(allowed_raw).split(",") if source.strip()]
         users[password] = {
             "username": safe_text(user.get("username", "Unknown")),
+            "sender_id": first_present_value(
+                user,
+                "Sender_ID",
+                "sender_ID",
+                "sender_id",
+                "send_ID",
+                "send_id",
+                "Sender ID",
+                "Sender Id",
+                "sender id",
+            ),
             "allowed_sources": sources,
             "branch": safe_text(user.get("branch", "")),
             "role": safe_text(user.get("role", "rm")),
@@ -230,11 +254,48 @@ def authenticate_simple_user(password: str) -> dict[str, Any] | None:
     return None
 
 
+def resolve_session_user(user: dict[str, Any]) -> dict[str, Any]:
+    password = safe_text(user.get("staff_id", ""))
+    authenticated = authenticate_simple_user(password)
+    if not authenticated:
+        return user
+    return {
+        **user,
+        "username": authenticated.get("username", user.get("username", "Sales Officer")),
+        "sender_id": authenticated.get("sender_id", user.get("sender_id", "")),
+        "role": authenticated.get("role", user.get("role", "rm")),
+        "branch": authenticated.get("branch", user.get("branch", "")),
+        "allowed_sources": authenticated.get("allowed_sources", user.get("allowed_sources", "all")),
+    }
+
+
 def is_manager(user: dict[str, Any]) -> bool:
     return safe_text(user.get("role", "rm")).lower() in {"manager", "admin", "management", "head", "supervisor"}
 
 
+def user_sender_id(user: dict[str, Any]) -> str:
+    return first_present_value(user, "sender_id", "Sender_ID", "sender_ID", "staff_id")
+
+
 def apply_visit_permissions(df: pd.DataFrame, user: dict[str, Any]) -> pd.DataFrame:
+    if df.empty:
+        return df
+
+    if not is_manager(user):
+        sender_id = normalize_identifier(user_sender_id(user))
+        sender_column = next(
+            (
+                col
+                for col in ("Sender_ID", "sender_ID", "sender_id", "send_ID", "send_id", "Sender ID", "Sender Id", "sender id")
+                if col in df.columns
+            ),
+            "",
+        )
+        if sender_column:
+            if not sender_id:
+                return df.iloc[0:0]
+            df = df[df[sender_column].apply(normalize_identifier) == sender_id]
+
     allowed_sources = user.get("allowed_sources", "all")
     if allowed_sources != "all" and "Source_Channel" in df.columns:
         return df[df["Source_Channel"].isin(allowed_sources)]
@@ -276,6 +337,33 @@ def ensure_potential_worksheet(gc):
         if missing:
             worksheet.update("A1", [headers + missing])
     return worksheet
+
+
+def ensure_new_customer_worksheet(gc):
+    sheet = gc.open_by_key(SHEET_ID)
+    try:
+        worksheet = sheet.worksheet(NEW_CUSTOMER_SHEET_NAME)
+    except gspread.exceptions.WorksheetNotFound:
+        worksheet = sheet.add_worksheet(title=NEW_CUSTOMER_SHEET_NAME, rows=1000, cols=len(CRM_COLUMNS))
+        worksheet.append_row(CRM_COLUMNS)
+        return worksheet
+
+    values = worksheet.get_all_values()
+    if not values:
+        worksheet.append_row(CRM_COLUMNS)
+    else:
+        headers = values[0]
+        missing = [col for col in CRM_COLUMNS if col not in headers]
+        if missing:
+            worksheet.update("A1", [headers + missing])
+    return worksheet
+
+
+def is_manual_customer(row: dict[str, Any]) -> bool:
+    entry_type = safe_text(row.get("Entry_Type", ""))
+    sender = safe_text(row.get("Sender_Name", ""))
+    source = safe_text(row.get("Source_Channel", row.get("Source_Type", "")))
+    return entry_type.lower() == "manual" or sender.lower() == "manual entry" or source.lower() == "manual entry"
 
 
 def load_potential_customers(user: dict[str, Any]) -> pd.DataFrame:
@@ -334,6 +422,13 @@ def add_potential_customer(row: dict[str, Any], user: dict[str, Any]) -> tuple[b
     }
     headers = worksheet.row_values(1) or CRM_COLUMNS
     worksheet.append_row([record.get(col, "") for col in headers])
+
+    if is_manual_customer(row):
+        new_customer_worksheet = ensure_new_customer_worksheet(gc)
+        new_customer_headers = new_customer_worksheet.row_values(1) or CRM_COLUMNS
+        new_customer_worksheet.append_row([record.get(col, "") for col in new_customer_headers])
+        return True, "Customer successfully added and safely stored in New_customer."
+
     return True, "Customer successfully added to My Potential Customers."
 
 
