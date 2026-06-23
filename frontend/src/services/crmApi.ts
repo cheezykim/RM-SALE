@@ -1,4 +1,4 @@
-import type { BootstrapData, DailyTask, PotentialCustomer, User, VisitCustomer } from "../types";
+import type { BootstrapData, DailyTask, PotentialCustomer, ReportSubmission, User, VisitCustomer } from "../types";
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, {
@@ -15,6 +15,23 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   }
 
   return response.json() as Promise<T>;
+}
+
+async function requestBlob(url: string, init?: RequestInit): Promise<Blob> {
+  const response = await fetch(url, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(init?.headers ?? {})
+    },
+    ...init
+  });
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({ detail: response.statusText }));
+    throw new Error(payload.detail || response.statusText);
+  }
+
+  return response.blob();
 }
 
 export const crmApi = {
@@ -43,6 +60,15 @@ export const crmApi = {
     request<{ ok: boolean; message: string }>("/api/daily-plan", {
       method: "POST",
       body: JSON.stringify({ user, plan_date, tasks })
+    }),
+  generateDailyReport: (user: User, report_date: string) =>
+    requestBlob("/api/reports/daily/generate", {
+      method: "POST",
+      body: JSON.stringify({ user, report_date })
+    }),
+  submitDailyReport: (user: User, report_date: string) =>
+    request<ReportSubmission>("/api/reports/daily/submit", {
+      method: "POST",
+      body: JSON.stringify({ user, report_date })
     })
 };
-

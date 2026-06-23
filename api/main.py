@@ -3,7 +3,7 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 
 from . import crm_service as crm
@@ -46,6 +46,11 @@ class DailyPlanRequest(BaseModel):
     user: SessionUser
     plan_date: str
     tasks: list[dict[str, Any]]
+
+
+class DailyReportRequest(BaseModel):
+    user: SessionUser
+    report_date: str
 
 
 def user_dict(user: SessionUser) -> dict[str, Any]:
@@ -126,3 +131,27 @@ def save_daily_plan(payload: DailyPlanRequest):
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     return {"ok": True, "message": "Daily plan submitted."}
+
+
+@app.post("/api/reports/daily/generate")
+def generate_daily_report(payload: DailyReportRequest):
+    try:
+        report = crm.build_daily_report_data(user_dict(payload.user), payload.report_date)
+        pdf = crm.generate_daily_report_pdf(report)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    filename = f"{report['report_id']}.pdf"
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.post("/api/reports/daily/submit")
+def submit_daily_report(payload: DailyReportRequest):
+    try:
+        return crm.submit_daily_report(user_dict(payload.user), payload.report_date)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc

@@ -74,6 +74,14 @@ export type DailyTask = {
   customers: Array<{ name: string; contact: string; biz: string }>;
 };
 
+export type ReportSubmission = {
+  ok: boolean;
+  message: string;
+  report_id: string;
+  pdf_url: string;
+  submitted_at: string;
+};
+
 export type DashboardData = {
   metrics: {
     totalVisitsThisMonth: number;

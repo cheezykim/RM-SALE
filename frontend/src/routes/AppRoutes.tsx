@@ -60,7 +60,7 @@ function AuthenticatedRoutes() {
         }
       />
       <Route path="/performance-analytics" element={<AppLayout user={user} active="Performance Analytics">{errorBlock}{isLoading || !data ? loading : <Analytics visits={data.visits} potentials={data.potentials} />}</AppLayout>} />
-      <Route path="/reports" element={<AppLayout user={user} active="Reports">{errorBlock}{isLoading || !data ? loading : <Reports visits={data.visits} potentials={data.potentials} />}</AppLayout>} />
+      <Route path="/reports" element={<AppLayout user={user} active="Reports">{errorBlock}{isLoading || !data ? loading : <Reports user={user} visits={data.visits} potentials={data.potentials} />}</AppLayout>} />
       <Route path="/settings" element={<AppLayout user={user} active="Settings">{errorBlock}<SettingsPage user={user} /></AppLayout>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

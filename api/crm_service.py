@@ -3,6 +3,7 @@ import json
 import os
 import tomllib
 from datetime import datetime, timedelta
+from io import BytesIO
 from pathlib import Path
 from typing import Any
 
@@ -10,6 +11,13 @@ import gspread
 import pandas as pd
 import pytz
 from google.oauth2.service_account import Credentials
+from google.auth.transport.requests import AuthorizedSession
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import mm
+from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -17,6 +25,27 @@ SHEET_ID = "1wM7DTHizhg_A3h0qV3EhX4os4hk46uolW-ESQSJkgZs"
 WORKSHEET_NAME = "retail_data"
 CRM_SHEET_NAME = "potential_customers"
 NEW_CUSTOMER_SHEET_NAME = "New_customer"
+REPORT_ARCHIVE_SHEET_NAME = "rm_report_submissions"
+REPORT_ARCHIVE_COLUMNS = [
+    "Report_ID",
+    "Staff_ID",
+    "RM_Name",
+    "Branch",
+    "Position",
+    "Report_Date",
+    "Generated_At",
+    "Submitted_At",
+    "PDF_File_Name",
+    "PDF_Drive_URL",
+    "Total_Visits",
+    "Total_Calls",
+    "Meetings_Conducted",
+    "Follow_Ups_Completed",
+    "New_Leads_Added",
+    "Hot_Leads",
+    "Opportunities_Created",
+    "Status",
+]
 CAMBODIA_TZ = pytz.timezone("Asia/Phnom_Penh")
 
 CRM_COLUMNS = [
@@ -133,17 +162,20 @@ def get_service_account_info() -> dict[str, Any] | None:
 
 
 def connect_to_google_sheets():
+    return gspread.authorize(get_google_credentials())
+
+
+def get_google_credentials():
     creds_dict = get_service_account_info()
     if not creds_dict:
         raise RuntimeError("Google Sheets credentials not found.")
-    credentials = Credentials.from_service_account_info(
+    return Credentials.from_service_account_info(
         creds_dict,
         scopes=[
             "https://www.googleapis.com/auth/spreadsheets",
             "https://www.googleapis.com/auth/drive.file",
         ],
     )
-    return gspread.authorize(credentials)
 
 
 def clean_records(df: pd.DataFrame) -> pd.DataFrame:
@@ -448,6 +480,325 @@ def save_daily_plan_to_sheet(plan_data: list[dict[str, Any]], user: dict[str, An
     if rows:
         worksheet.append_rows(rows)
     return True
+
+
+def parse_report_date(value: Any):
+    text = safe_text(value)
+    if not text:
+        return None
+    for day_first in (False, True):
+        parsed = pd.to_datetime(text, errors="coerce", dayfirst=day_first)
+        if not pd.isna(parsed):
+            return parsed.date()
+    return None
+
+
+def filter_by_date(df: pd.DataFrame, column: str, report_date) -> pd.DataFrame:
+    if df.empty or column not in df.columns:
+        return pd.DataFrame(columns=df.columns)
+    mask = df[column].apply(lambda value: parse_report_date(value) == report_date)
+    return df[mask]
+
+
+def ensure_report_archive_worksheet(gc):
+    sheet = gc.open_by_key(SHEET_ID)
+    try:
+        worksheet = sheet.worksheet(REPORT_ARCHIVE_SHEET_NAME)
+    except gspread.exceptions.WorksheetNotFound:
+        worksheet = sheet.add_worksheet(title=REPORT_ARCHIVE_SHEET_NAME, rows=1000, cols=len(REPORT_ARCHIVE_COLUMNS))
+        worksheet.append_row(REPORT_ARCHIVE_COLUMNS)
+        return worksheet
+
+    values = worksheet.get_all_values()
+    if not values:
+        worksheet.append_row(REPORT_ARCHIVE_COLUMNS)
+    else:
+        headers = values[0]
+        missing = [col for col in REPORT_ARCHIVE_COLUMNS if col not in headers]
+        if missing:
+            worksheet.update("A1", [headers + missing])
+    return worksheet
+
+
+def load_daily_plan_rows(gc, user: dict[str, Any], report_date) -> list[dict[str, Any]]:
+    sheet = gc.open_by_key(SHEET_ID)
+    try:
+        worksheet = sheet.worksheet("plan")
+    except gspread.exceptions.WorksheetNotFound:
+        return []
+
+    values = worksheet.get_all_values()
+    if len(values) < 2:
+        return []
+
+    plan_columns = [
+        "Start_Time",
+        "End_Time",
+        "Plan_Date",
+        "Activity",
+        "Location",
+        "Num_Customers",
+        "Customer_Name",
+        "Customer_Tel",
+        "Customer_Business",
+        "Staff_ID",
+        "Submitted_At",
+    ]
+    staff_id = safe_text(user.get("staff_id", ""))
+    rows: list[dict[str, Any]] = []
+    for raw in values[1:]:
+        item = dict(zip(plan_columns, raw + [""] * (len(plan_columns) - len(raw))))
+        if safe_text(item.get("Staff_ID")) != staff_id:
+            continue
+        if parse_report_date(item.get("Plan_Date")) != report_date:
+            continue
+        rows.append(item)
+    return rows
+
+
+def normalize_activity_type(value: Any) -> str:
+    text = safe_text(value).lower()
+    if "call" in text or "phone" in text:
+        return "Phone Call"
+    if "meet" in text:
+        return "Meeting"
+    if "follow" in text:
+        return "Follow Up"
+    if "visit" in text:
+        return "Market Visit"
+    if "new" in text or "acquisition" in text:
+        return "New Customer Acquisition"
+    if "opportun" in text or "proposal" in text or "document" in text or "negotiation" in text:
+        return "Opportunity Update"
+    return safe_text(value) or "Activity"
+
+
+def activity_sort_key(item: dict[str, Any]) -> str:
+    return safe_text(item.get("time", "99:99"))
+
+
+def build_daily_report_data(user: dict[str, Any], report_date_text: str) -> dict[str, Any]:
+    report_date = datetime.strptime(report_date_text, "%Y-%m-%d").date()
+    gc = connect_to_google_sheets()
+    visits = load_visit_data_for_crm(user)
+    potentials = load_potential_customers(user)
+    daily_visits = filter_by_date(visits, "Message_Date", report_date)
+    new_leads = filter_by_date(potentials, "Date_Added", report_date)
+    updated_today = filter_by_date(potentials, "Last_Updated", report_date)
+    plan_rows = load_daily_plan_rows(gc, user, report_date)
+
+    timeline: list[dict[str, Any]] = []
+    for _, row in daily_visits.iterrows():
+        timeline.append(
+            {
+                "time": safe_text(row.get("Message_Date", "")),
+                "customer": safe_text(row.get("Name", "Customer")),
+                "type": "Market Visit",
+                "remark": safe_text(row.get("Remark", row.get("Purpose", ""))),
+                "outcome": safe_text(row.get("Potential_Level", "Visited")),
+            }
+        )
+
+    for item in plan_rows:
+        activity_type = normalize_activity_type(item.get("Activity"))
+        timeline.append(
+            {
+                "time": safe_text(item.get("Start_Time")),
+                "customer": safe_text(item.get("Customer_Name")) or "-",
+                "type": activity_type,
+                "remark": safe_text(item.get("Location")),
+                "outcome": "Planned / Submitted",
+            }
+        )
+
+    for _, row in updated_today.iterrows():
+        status = safe_text(row.get("Status", "Updated"))
+        timeline.append(
+            {
+                "time": safe_text(row.get("Last_Updated")),
+                "customer": safe_text(row.get("Name", "Customer")),
+                "type": "Opportunity Update",
+                "remark": safe_text(row.get("Remark", row.get("Notes", ""))),
+                "outcome": status,
+            }
+        )
+
+    timeline = sorted(timeline, key=activity_sort_key)
+
+    upcoming = pd.DataFrame()
+    if not potentials.empty and "Next_Follow_Up" in potentials.columns:
+        upcoming = potentials.copy()
+        upcoming["_follow"] = pd.to_datetime(upcoming["Next_Follow_Up"], errors="coerce")
+        start = pd.Timestamp(report_date)
+        upcoming = upcoming[upcoming["_follow"].notna() & (upcoming["_follow"] >= start)].sort_values("_follow").head(10)
+
+    plan_activity_types = [normalize_activity_type(item.get("Activity")) for item in plan_rows]
+    total_calls = sum(1 for item in plan_activity_types if item == "Phone Call")
+    meetings = sum(1 for item in plan_activity_types if item == "Meeting")
+    follow_ups = sum(1 for item in plan_activity_types if item == "Follow Up")
+    follow_ups += len(
+        updated_today[
+            updated_today["Activities"].astype(str).str.lower().str.contains("follow", na=False)
+        ]
+    ) if not updated_today.empty and "Activities" in updated_today.columns else 0
+    hot_leads = len(
+        new_leads[
+            new_leads["Potential_Level"].astype(str).str.upper().isin(["H", "HOT", "HIGH"])
+        ]
+    ) if not new_leads.empty and "Potential_Level" in new_leads.columns else 0
+
+    return {
+        "report_id": f"RM-{safe_text(user.get('staff_id', 'USER'))}-{report_date.strftime('%Y%m%d')}-{now_cambodia().strftime('%H%M%S')}",
+        "report_date": report_date_text,
+        "generated_at": now_cambodia().strftime("%Y-%m-%d %H:%M:%S"),
+        "rm": {
+            "name": safe_text(user.get("username", "Sales Officer")),
+            "branch": safe_text(user.get("branch", "")),
+            "position": safe_text(user.get("role", "Relationship Manager")),
+            "staff_id": safe_text(user.get("staff_id", "")),
+        },
+        "kpis": {
+            "Total Visits": len(daily_visits),
+            "Total Calls": total_calls,
+            "Meetings Conducted": meetings,
+            "Follow Ups Completed": follow_ups,
+            "New Leads Added": len(new_leads),
+            "HOT Leads": hot_leads,
+            "Opportunities Created": len(new_leads),
+        },
+        "timeline": timeline,
+        "new_customers": to_records(new_leads.head(20)),
+        "next_actions": to_records(upcoming.drop(columns=["_follow"], errors="ignore")),
+    }
+
+
+def table_or_empty(rows: list[list[Any]], widths: list[float], header_color=colors.HexColor("#0B4EA2")) -> Table:
+    data = rows if len(rows) > 1 else rows + [["No records available.", "", "", ""][: len(rows[0])]]
+    table = Table(data, colWidths=widths, repeatRows=1)
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), header_color),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 8),
+                ("GRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#D8DEE8")),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F7F9FC")]),
+                ("LEFTPADDING", (0, 0), (-1, -1), 6),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                ("TOPPADDING", (0, 0), (-1, -1), 5),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+            ]
+        )
+    )
+    return table
+
+
+def generate_daily_report_pdf(report: dict[str, Any]) -> bytes:
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=16 * mm, leftMargin=16 * mm, topMargin=12 * mm, bottomMargin=14 * mm)
+    styles = getSampleStyleSheet()
+    title = ParagraphStyle("ReportTitle", parent=styles["Title"], fontName="Helvetica-Bold", fontSize=18, textColor=colors.HexColor("#0B2545"), alignment=TA_CENTER, spaceAfter=4)
+    section = ParagraphStyle("Section", parent=styles["Heading2"], fontName="Helvetica-Bold", fontSize=11, textColor=colors.HexColor("#0B4EA2"), spaceBefore=10, spaceAfter=6)
+    small = ParagraphStyle("Small", parent=styles["BodyText"], fontSize=8, leading=10, alignment=TA_LEFT)
+    story: list[Any] = []
+
+    logo_path = BASE_DIR / "Logo-CMCB_FA-15.png"
+    if logo_path.exists():
+        story.append(Image(str(logo_path), width=38 * mm, height=15 * mm, hAlign="CENTER"))
+        story.append(Spacer(1, 4))
+
+    story.append(Paragraph("Relationship Manager Activity Report", title))
+    story.append(Paragraph(f"Reporting Date: {report['report_date']} &nbsp;&nbsp; Generated Date: {report['generated_at']}", ParagraphStyle("Subtitle", parent=small, alignment=TA_CENTER, textColor=colors.HexColor("#53657D"))))
+    story.append(Spacer(1, 8))
+
+    rm = report["rm"]
+    rm_rows = [
+        ["RM Name", rm["name"], "Branch", rm["branch"]],
+        ["Position", rm["position"], "Staff ID", rm["staff_id"]],
+    ]
+    story.append(Paragraph("RM Information", section))
+    story.append(table_or_empty(rm_rows, [28 * mm, 62 * mm, 28 * mm, 62 * mm], colors.HexColor("#173B6C")))
+
+    kpis = report["kpis"]
+    kpi_rows = [["Total Visits", "Total Calls", "Meetings", "Follow Ups", "New Leads", "HOT Leads", "Opportunities"], [kpis["Total Visits"], kpis["Total Calls"], kpis["Meetings Conducted"], kpis["Follow Ups Completed"], kpis["New Leads Added"], kpis["HOT Leads"], kpis["Opportunities Created"]]]
+    story.append(Paragraph("Daily KPI Summary", section))
+    story.append(table_or_empty(kpi_rows, [26 * mm] * 7, colors.HexColor("#0B4EA2")))
+
+    story.append(Paragraph("Customer Activity Timeline", section))
+    timeline_rows = [["Time", "Customer Name", "Activity Type", "Remark", "Outcome"]]
+    for item in report["timeline"][:30]:
+        timeline_rows.append([safe_text(item.get("time")), safe_text(item.get("customer")), safe_text(item.get("type")), safe_text(item.get("remark")), safe_text(item.get("outcome"))])
+    story.append(table_or_empty(timeline_rows, [28 * mm, 42 * mm, 34 * mm, 50 * mm, 28 * mm]))
+
+    story.append(Paragraph("New Potential Customers", section))
+    customer_rows = [["Customer", "Product", "Amount", "Potential", "Source"]]
+    for row in report["new_customers"][:15]:
+        customer_rows.append([safe_text(row.get("Name")), safe_text(row.get("Potential_Products")), safe_text(row.get("Amount")), safe_text(row.get("Potential_Level")), safe_text(row.get("Source_Channel", row.get("Source_Type", "")))])
+    story.append(table_or_empty(customer_rows, [44 * mm, 40 * mm, 30 * mm, 28 * mm, 40 * mm]))
+
+    story.append(Paragraph("Next Action Plan", section))
+    action_rows = [["Date", "Customer", "Action", "Status"]]
+    for row in report["next_actions"][:12]:
+        action_rows.append([safe_text(row.get("Next_Follow_Up")), safe_text(row.get("Name")), safe_text(row.get("Remark", row.get("Notes", ""))), safe_text(row.get("Status"))])
+    story.append(table_or_empty(action_rows, [28 * mm, 48 * mm, 78 * mm, 28 * mm]))
+
+    story.append(Spacer(1, 8))
+    story.append(Paragraph(f"Report ID: {report['report_id']}", small))
+    doc.build(story)
+    return buffer.getvalue()
+
+
+def upload_pdf_to_drive(pdf_bytes: bytes, filename: str) -> dict[str, str]:
+    credentials = get_google_credentials()
+    session = AuthorizedSession(credentials)
+    metadata = {"name": filename, "mimeType": "application/pdf"}
+    boundary = "crm-report-boundary"
+    body = (
+        f"--{boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"
+        f"{json.dumps(metadata)}\r\n"
+        f"--{boundary}\r\nContent-Type: application/pdf\r\n\r\n"
+    ).encode("utf-8") + pdf_bytes + f"\r\n--{boundary}--".encode("utf-8")
+    response = session.post(
+        "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink,webContentLink",
+        data=body,
+        headers={"Content-Type": f"multipart/related; boundary={boundary}"},
+    )
+    if response.status_code >= 400:
+        raise RuntimeError(f"Google Drive upload failed: {response.text}")
+    payload = response.json()
+    return {
+        "id": payload.get("id", ""),
+        "url": payload.get("webViewLink") or payload.get("webContentLink") or "",
+    }
+
+
+def submit_daily_report(user: dict[str, Any], report_date: str) -> dict[str, Any]:
+    report = build_daily_report_data(user, report_date)
+    pdf = generate_daily_report_pdf(report)
+    filename = f"{report['report_id']}.pdf"
+    drive = upload_pdf_to_drive(pdf, filename)
+    submitted_at = now_cambodia().strftime("%Y-%m-%d %H:%M:%S")
+    gc = connect_to_google_sheets()
+    worksheet = ensure_report_archive_worksheet(gc)
+    headers = worksheet.row_values(1) or REPORT_ARCHIVE_COLUMNS
+    row = {
+        "Report_ID": report["report_id"],
+        "Staff_ID": report["rm"]["staff_id"],
+        "RM_Name": report["rm"]["name"],
+        "Branch": report["rm"]["branch"],
+        "Position": report["rm"]["position"],
+        "Report_Date": report["report_date"],
+        "Generated_At": report["generated_at"],
+        "Submitted_At": submitted_at,
+        "PDF_File_Name": filename,
+        "PDF_Drive_URL": drive["url"],
+        "Status": "Submitted",
+        **report["kpis"],
+    }
+    worksheet.append_row([row.get(col, "") for col in headers])
+    return {"ok": True, "message": "Daily report generated and submitted.", "report_id": report["report_id"], "pdf_url": drive["url"], "submitted_at": submitted_at}
 
 
 def dashboard_summary(visits: pd.DataFrame, potentials: pd.DataFrame) -> dict[str, Any]:

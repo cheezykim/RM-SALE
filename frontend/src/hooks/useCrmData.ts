@@ -62,3 +62,16 @@ export function useSaveDailyPlan() {
   });
 }
 
+export function useGenerateDailyReport() {
+  return useMutation({
+    mutationFn: ({ user, reportDate }: { user: User; reportDate: string }) =>
+      crmApi.generateDailyReport(user, reportDate)
+  });
+}
+
+export function useSubmitDailyReport() {
+  return useMutation({
+    mutationFn: ({ user, reportDate }: { user: User; reportDate: string }) =>
+      crmApi.submitDailyReport(user, reportDate)
+  });
+}
