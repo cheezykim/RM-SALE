@@ -17,7 +17,7 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
-from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -778,15 +778,13 @@ def generate_daily_report_pdf(report: dict[str, Any]) -> bytes:
     body = ParagraphStyle("PremiumTableBody", parent=styles["BodyText"], fontSize=7.5, leading=9.5, textColor=BANK_INK)
     story: list[Any] = []
 
-    logo_path = BASE_DIR / "Logo-CMCB_FA-15.png"
-    logo = ""
-    if logo_path.exists():
-        logo = Image(str(logo_path), width=40 * mm, height=16 * mm)
-
     masthead = Table(
         [
             [
-                logo,
+                [
+                    Paragraph("CHIP MONG", ParagraphStyle("BrandName", parent=styles["BodyText"], fontName="Helvetica-Bold", fontSize=13, leading=15, textColor=BANK_NAVY)),
+                    Paragraph("COMMERCIAL BANK", ParagraphStyle("BrandSub", parent=styles["BodyText"], fontName="Helvetica-Bold", fontSize=7.5, leading=9, textColor=BANK_MUTED)),
+                ],
                 [
                     Paragraph("EXECUTIVE BANKING REPORT", eyebrow),
                     Paragraph("Relationship Manager Activity Report", title),
