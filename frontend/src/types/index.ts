@@ -3,7 +3,6 @@ export type User = {
   username: string;
   role: string;
   branch: string;
-  sender_id?: string;
   allowed_sources: "all" | string[];
 };
 

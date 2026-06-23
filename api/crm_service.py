@@ -79,18 +79,6 @@ def safe_text(value: Any) -> str:
     return str(value).strip()
 
 
-def first_present_value(row: Any, *keys: str) -> str:
-    for key in keys:
-        value = safe_text(row.get(key, ""))
-        if value:
-            return value
-    return ""
-
-
-def normalize_identifier(value: Any) -> str:
-    return safe_text(value).lower()
-
-
 def lead_label(level: Any) -> str:
     normalized = safe_text(level).upper()
     if normalized in {"H", "HOT", "HIGH"}:
@@ -223,17 +211,6 @@ def load_users_from_sheets(gc, sheet_id: str, worksheet_name: str = "Users") -> 
             sources = [source.strip() for source in safe_text(allowed_raw).split(",") if source.strip()]
         users[password] = {
             "username": safe_text(user.get("username", "Unknown")),
-            "sender_id": first_present_value(
-                user,
-                "Sender_ID",
-                "sender_ID",
-                "sender_id",
-                "send_ID",
-                "send_id",
-                "Sender ID",
-                "Sender Id",
-                "sender id",
-            ),
             "allowed_sources": sources,
             "branch": safe_text(user.get("branch", "")),
             "role": safe_text(user.get("role", "rm")),
@@ -254,48 +231,11 @@ def authenticate_simple_user(password: str) -> dict[str, Any] | None:
     return None
 
 
-def resolve_session_user(user: dict[str, Any]) -> dict[str, Any]:
-    password = safe_text(user.get("staff_id", ""))
-    authenticated = authenticate_simple_user(password)
-    if not authenticated:
-        return user
-    return {
-        **user,
-        "username": authenticated.get("username", user.get("username", "Sales Officer")),
-        "sender_id": authenticated.get("sender_id", user.get("sender_id", "")),
-        "role": authenticated.get("role", user.get("role", "rm")),
-        "branch": authenticated.get("branch", user.get("branch", "")),
-        "allowed_sources": authenticated.get("allowed_sources", user.get("allowed_sources", "all")),
-    }
-
-
 def is_manager(user: dict[str, Any]) -> bool:
     return safe_text(user.get("role", "rm")).lower() in {"manager", "admin", "management", "head", "supervisor"}
 
 
-def user_sender_id(user: dict[str, Any]) -> str:
-    return first_present_value(user, "sender_id", "Sender_ID", "sender_ID", "staff_id")
-
-
 def apply_visit_permissions(df: pd.DataFrame, user: dict[str, Any]) -> pd.DataFrame:
-    if df.empty:
-        return df
-
-    if not is_manager(user):
-        sender_id = normalize_identifier(user_sender_id(user))
-        sender_column = next(
-            (
-                col
-                for col in ("Sender_ID", "sender_ID", "sender_id", "send_ID", "send_id", "Sender ID", "Sender Id", "sender id")
-                if col in df.columns
-            ),
-            "",
-        )
-        if sender_column:
-            if not sender_id:
-                return df.iloc[0:0]
-            df = df[df[sender_column].apply(normalize_identifier) == sender_id]
-
     allowed_sources = user.get("allowed_sources", "all")
     if allowed_sources != "all" and "Source_Channel" in df.columns:
         return df[df["Source_Channel"].isin(allowed_sources)]
