@@ -13,7 +13,7 @@ import pytz
 from google.oauth2.service_account import Credentials
 from google.auth.transport.requests import AuthorizedSession
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
@@ -47,6 +47,13 @@ REPORT_ARCHIVE_COLUMNS = [
     "Status",
 ]
 CAMBODIA_TZ = pytz.timezone("Asia/Phnom_Penh")
+BANK_NAVY = colors.HexColor("#071A33")
+BANK_BLUE = colors.HexColor("#0B4EA2")
+BANK_GOLD = colors.HexColor("#C8A24A")
+BANK_INK = colors.HexColor("#172033")
+BANK_MUTED = colors.HexColor("#607089")
+BANK_LINE = colors.HexColor("#D9E1EC")
+BANK_SOFT = colors.HexColor("#F5F8FC")
 
 CRM_COLUMNS = [
     "Customer_Key",
@@ -672,8 +679,26 @@ def build_daily_report_data(user: dict[str, Any], report_date_text: str) -> dict
     }
 
 
-def table_or_empty(rows: list[list[Any]], widths: list[float], header_color=colors.HexColor("#0B4EA2")) -> Table:
+def pdf_text(value: Any, fallback: str = "-") -> str:
+    text = safe_text(value)
+    return text if text else fallback
+
+
+def pdf_cell(value: Any, style: ParagraphStyle) -> Paragraph:
+    return Paragraph(pdf_text(value).replace("\n", "<br/>"), style)
+
+
+def table_or_empty(
+    rows: list[list[Any]],
+    widths: list[float],
+    header_color=BANK_NAVY,
+    body_style: ParagraphStyle | None = None,
+) -> Table:
+    styles = getSampleStyleSheet()
+    body = body_style or ParagraphStyle("TableBody", parent=styles["BodyText"], fontSize=7.8, leading=10, textColor=BANK_INK)
+    header = ParagraphStyle("TableHeader", parent=body, fontName="Helvetica-Bold", fontSize=7.5, leading=9, textColor=colors.white)
     data = rows if len(rows) > 1 else rows + [["No records available.", "", "", ""][: len(rows[0])]]
+    data = [[pdf_cell(value, header if row_index == 0 else body) for value in row] for row_index, row in enumerate(data)]
     table = Table(data, colWidths=widths, repeatRows=1)
     table.setStyle(
         TableStyle(
@@ -681,10 +706,11 @@ def table_or_empty(rows: list[list[Any]], widths: list[float], header_color=colo
                 ("BACKGROUND", (0, 0), (-1, 0), header_color),
                 ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
                 ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                ("FONTSIZE", (0, 0), (-1, -1), 8),
-                ("GRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#D8DEE8")),
+                ("FONTSIZE", (0, 0), (-1, -1), 7.8),
+                ("LINEBELOW", (0, 0), (-1, 0), 0.8, BANK_GOLD),
+                ("GRID", (0, 0), (-1, -1), 0.25, BANK_LINE),
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F7F9FC")]),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, BANK_SOFT]),
                 ("LEFTPADDING", (0, 0), (-1, -1), 6),
                 ("RIGHTPADDING", (0, 0), (-1, -1), 6),
                 ("TOPPADDING", (0, 0), (-1, -1), 5),
@@ -695,58 +721,155 @@ def table_or_empty(rows: list[list[Any]], widths: list[float], header_color=colo
     return table
 
 
+def draw_report_frame(canvas, doc, report: dict[str, Any]) -> None:
+    canvas.saveState()
+    page_width, page_height = A4
+    canvas.setFillColor(BANK_NAVY)
+    canvas.rect(0, page_height - 18 * mm, page_width, 18 * mm, stroke=0, fill=1)
+    canvas.setFillColor(BANK_GOLD)
+    canvas.rect(0, page_height - 18.8 * mm, page_width, 0.8 * mm, stroke=0, fill=1)
+    canvas.setFillColor(colors.white)
+    canvas.setFont("Helvetica-Bold", 8)
+    canvas.drawString(16 * mm, page_height - 10.8 * mm, "CHIP MONG BANK")
+    canvas.setFont("Helvetica", 7)
+    canvas.drawRightString(page_width - 16 * mm, page_height - 10.8 * mm, f"RM Activity Report | {report.get('report_date', '')}")
+    canvas.setFillColor(BANK_MUTED)
+    canvas.setFont("Helvetica", 7)
+    canvas.drawString(16 * mm, 8 * mm, f"Confidential - Internal Management Review | Report ID: {report.get('report_id', '')}")
+    canvas.drawRightString(page_width - 16 * mm, 8 * mm, f"Page {doc.page}")
+    canvas.restoreState()
+
+
+def kpi_card_table(kpis: dict[str, Any]) -> Table:
+    labels = ["Visits", "Calls", "Meetings", "Follow Ups", "New Leads", "HOT Leads", "Opportunities"]
+    keys = ["Total Visits", "Total Calls", "Meetings Conducted", "Follow Ups Completed", "New Leads Added", "HOT Leads", "Opportunities Created"]
+    styles = getSampleStyleSheet()
+    label_style = ParagraphStyle("KpiLabel", parent=styles["BodyText"], fontSize=6.8, leading=8, textColor=BANK_MUTED, alignment=TA_CENTER, fontName="Helvetica-Bold")
+    value_style = ParagraphStyle("KpiValue", parent=styles["BodyText"], fontSize=14, leading=16, textColor=BANK_NAVY, alignment=TA_CENTER, fontName="Helvetica-Bold")
+    data = [
+        [pdf_cell(label, label_style) for label in labels],
+        [pdf_cell(kpis.get(key, 0), value_style) for key in keys],
+    ]
+    table = Table(data, colWidths=[26 * mm] * 7)
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), colors.white),
+                ("BOX", (0, 0), (-1, -1), 0.35, BANK_LINE),
+                ("INNERGRID", (0, 0), (-1, -1), 0.25, BANK_LINE),
+                ("LINEABOVE", (0, 0), (-1, 0), 1.2, BANK_GOLD),
+                ("TOPPADDING", (0, 0), (-1, -1), 8),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+            ]
+        )
+    )
+    return table
+
+
 def generate_daily_report_pdf(report: dict[str, Any]) -> bytes:
     buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=16 * mm, leftMargin=16 * mm, topMargin=12 * mm, bottomMargin=14 * mm)
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=14 * mm, leftMargin=14 * mm, topMargin=26 * mm, bottomMargin=18 * mm)
     styles = getSampleStyleSheet()
-    title = ParagraphStyle("ReportTitle", parent=styles["Title"], fontName="Helvetica-Bold", fontSize=18, textColor=colors.HexColor("#0B2545"), alignment=TA_CENTER, spaceAfter=4)
-    section = ParagraphStyle("Section", parent=styles["Heading2"], fontName="Helvetica-Bold", fontSize=11, textColor=colors.HexColor("#0B4EA2"), spaceBefore=10, spaceAfter=6)
-    small = ParagraphStyle("Small", parent=styles["BodyText"], fontSize=8, leading=10, alignment=TA_LEFT)
+    title = ParagraphStyle("ReportTitle", parent=styles["Title"], fontName="Helvetica-Bold", fontSize=20, leading=23, textColor=BANK_NAVY, alignment=TA_RIGHT, spaceAfter=3)
+    eyebrow = ParagraphStyle("Eyebrow", parent=styles["BodyText"], fontName="Helvetica-Bold", fontSize=7.5, leading=9, textColor=BANK_GOLD, alignment=TA_RIGHT)
+    subtitle = ParagraphStyle("Subtitle", parent=styles["BodyText"], fontSize=8, leading=10, alignment=TA_RIGHT, textColor=BANK_MUTED)
+    section = ParagraphStyle("Section", parent=styles["Heading2"], fontName="Helvetica-Bold", fontSize=10.5, leading=13, textColor=BANK_NAVY, spaceBefore=11, spaceAfter=6)
+    small = ParagraphStyle("Small", parent=styles["BodyText"], fontSize=7.6, leading=10, alignment=TA_LEFT, textColor=BANK_MUTED)
+    body = ParagraphStyle("PremiumTableBody", parent=styles["BodyText"], fontSize=7.5, leading=9.5, textColor=BANK_INK)
     story: list[Any] = []
 
     logo_path = BASE_DIR / "Logo-CMCB_FA-15.png"
+    logo = ""
     if logo_path.exists():
-        story.append(Image(str(logo_path), width=38 * mm, height=15 * mm, hAlign="CENTER"))
-        story.append(Spacer(1, 4))
+        logo = Image(str(logo_path), width=40 * mm, height=16 * mm)
 
-    story.append(Paragraph("Relationship Manager Activity Report", title))
-    story.append(Paragraph(f"Reporting Date: {report['report_date']} &nbsp;&nbsp; Generated Date: {report['generated_at']}", ParagraphStyle("Subtitle", parent=small, alignment=TA_CENTER, textColor=colors.HexColor("#53657D"))))
+    masthead = Table(
+        [
+            [
+                logo,
+                [
+                    Paragraph("EXECUTIVE BANKING REPORT", eyebrow),
+                    Paragraph("Relationship Manager Activity Report", title),
+                    Paragraph(f"Reporting Date: {report['report_date']}<br/>Generated Date: {report['generated_at']}", subtitle),
+                ],
+            ]
+        ],
+        colWidths=[56 * mm, 126 * mm],
+    )
+    masthead.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), colors.white),
+                ("BOX", (0, 0), (-1, -1), 0.4, BANK_LINE),
+                ("LINEBELOW", (0, 0), (-1, -1), 1.2, BANK_GOLD),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 10),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+                ("TOPPADDING", (0, 0), (-1, -1), 10),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
+            ]
+        )
+    )
+    story.append(masthead)
     story.append(Spacer(1, 8))
 
     rm = report["rm"]
     rm_rows = [
+        ["RM Information", "Details", "Report Control", "Details"],
         ["RM Name", rm["name"], "Branch", rm["branch"]],
         ["Position", rm["position"], "Staff ID", rm["staff_id"]],
+        ["Report ID", report["report_id"], "Status", "Generated"],
     ]
     story.append(Paragraph("RM Information", section))
-    story.append(table_or_empty(rm_rows, [28 * mm, 62 * mm, 28 * mm, 62 * mm], colors.HexColor("#173B6C")))
+    story.append(table_or_empty(rm_rows, [28 * mm, 64 * mm, 28 * mm, 62 * mm], BANK_NAVY, body))
 
     kpis = report["kpis"]
-    kpi_rows = [["Total Visits", "Total Calls", "Meetings", "Follow Ups", "New Leads", "HOT Leads", "Opportunities"], [kpis["Total Visits"], kpis["Total Calls"], kpis["Meetings Conducted"], kpis["Follow Ups Completed"], kpis["New Leads Added"], kpis["HOT Leads"], kpis["Opportunities Created"]]]
     story.append(Paragraph("Daily KPI Summary", section))
-    story.append(table_or_empty(kpi_rows, [26 * mm] * 7, colors.HexColor("#0B4EA2")))
+    story.append(kpi_card_table(kpis))
 
     story.append(Paragraph("Customer Activity Timeline", section))
     timeline_rows = [["Time", "Customer Name", "Activity Type", "Remark", "Outcome"]]
     for item in report["timeline"][:30]:
         timeline_rows.append([safe_text(item.get("time")), safe_text(item.get("customer")), safe_text(item.get("type")), safe_text(item.get("remark")), safe_text(item.get("outcome"))])
-    story.append(table_or_empty(timeline_rows, [28 * mm, 42 * mm, 34 * mm, 50 * mm, 28 * mm]))
+    story.append(table_or_empty(timeline_rows, [28 * mm, 42 * mm, 34 * mm, 52 * mm, 26 * mm], BANK_BLUE, body))
 
     story.append(Paragraph("New Potential Customers", section))
     customer_rows = [["Customer", "Product", "Amount", "Potential", "Source"]]
     for row in report["new_customers"][:15]:
         customer_rows.append([safe_text(row.get("Name")), safe_text(row.get("Potential_Products")), safe_text(row.get("Amount")), safe_text(row.get("Potential_Level")), safe_text(row.get("Source_Channel", row.get("Source_Type", "")))])
-    story.append(table_or_empty(customer_rows, [44 * mm, 40 * mm, 30 * mm, 28 * mm, 40 * mm]))
+    story.append(table_or_empty(customer_rows, [44 * mm, 40 * mm, 30 * mm, 28 * mm, 40 * mm], BANK_NAVY, body))
 
     story.append(Paragraph("Next Action Plan", section))
     action_rows = [["Date", "Customer", "Action", "Status"]]
     for row in report["next_actions"][:12]:
         action_rows.append([safe_text(row.get("Next_Follow_Up")), safe_text(row.get("Name")), safe_text(row.get("Remark", row.get("Notes", ""))), safe_text(row.get("Status"))])
-    story.append(table_or_empty(action_rows, [28 * mm, 48 * mm, 78 * mm, 28 * mm]))
+    story.append(table_or_empty(action_rows, [28 * mm, 48 * mm, 78 * mm, 28 * mm], BANK_BLUE, body))
 
-    story.append(Spacer(1, 8))
-    story.append(Paragraph(f"Report ID: {report['report_id']}", small))
-    doc.build(story)
+    story.append(Spacer(1, 10))
+    attestation = Table(
+        [[Paragraph("Submission Note", ParagraphStyle("AttestationTitle", parent=small, fontName="Helvetica-Bold", textColor=BANK_NAVY)), Paragraph("This report is generated from CRM activity records and is intended for internal productivity, pipeline, and customer engagement review.", small)]],
+        colWidths=[34 * mm, 148 * mm],
+    )
+    attestation.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), BANK_SOFT),
+                ("BOX", (0, 0), (-1, -1), 0.35, BANK_LINE),
+                ("LINELEFT", (0, 0), (0, -1), 2, BANK_GOLD),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("TOPPADDING", (0, 0), (-1, -1), 8),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+                ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+            ]
+        )
+    )
+    story.append(attestation)
+    doc.build(
+        story,
+        onFirstPage=lambda canvas, current_doc: draw_report_frame(canvas, current_doc, report),
+        onLaterPages=lambda canvas, current_doc: draw_report_frame(canvas, current_doc, report),
+    )
     return buffer.getvalue()
 
 
