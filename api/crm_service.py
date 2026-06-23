@@ -729,8 +729,6 @@ def draw_report_frame(canvas, doc, report: dict[str, Any]) -> None:
     canvas.setFillColor(BANK_GOLD)
     canvas.rect(0, page_height - 18.8 * mm, page_width, 0.8 * mm, stroke=0, fill=1)
     canvas.setFillColor(colors.white)
-    canvas.setFont("Helvetica-Bold", 8)
-    canvas.drawString(16 * mm, page_height - 10.8 * mm, "CHIP MONG BANK")
     canvas.setFont("Helvetica", 7)
     canvas.drawRightString(page_width - 16 * mm, page_height - 10.8 * mm, f"RM Activity Report | {report.get('report_date', '')}")
     canvas.setFillColor(BANK_MUTED)
@@ -782,17 +780,13 @@ def generate_daily_report_pdf(report: dict[str, Any]) -> bytes:
         [
             [
                 [
-                    Paragraph("CHIP MONG", ParagraphStyle("BrandName", parent=styles["BodyText"], fontName="Helvetica-Bold", fontSize=13, leading=15, textColor=BANK_NAVY)),
-                    Paragraph("COMMERCIAL BANK", ParagraphStyle("BrandSub", parent=styles["BodyText"], fontName="Helvetica-Bold", fontSize=7.5, leading=9, textColor=BANK_MUTED)),
-                ],
-                [
                     Paragraph("EXECUTIVE BANKING REPORT", eyebrow),
                     Paragraph("Relationship Manager Activity Report", title),
                     Paragraph(f"Reporting Date: {report['report_date']}<br/>Generated Date: {report['generated_at']}", subtitle),
                 ],
             ]
         ],
-        colWidths=[56 * mm, 126 * mm],
+        colWidths=[182 * mm],
     )
     masthead.setStyle(
         TableStyle(
