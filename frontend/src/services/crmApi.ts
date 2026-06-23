@@ -61,14 +61,14 @@ export const crmApi = {
       method: "POST",
       body: JSON.stringify({ user, plan_date, tasks })
     }),
-  generateDailyReport: (user: User, report_date: string) =>
+  generateDailyReport: (user: User, report_date: string, activities: Record<string, string>) =>
     requestBlob("/api/reports/daily/generate", {
       method: "POST",
-      body: JSON.stringify({ user, report_date })
+      body: JSON.stringify({ user, report_date, activities })
     }),
-  submitDailyReport: (user: User, report_date: string) =>
+  submitDailyReport: (user: User, report_date: string, activities: Record<string, string>) =>
     request<ReportSubmission>("/api/reports/daily/submit", {
       method: "POST",
-      body: JSON.stringify({ user, report_date })
+      body: JSON.stringify({ user, report_date, activities })
     })
 };

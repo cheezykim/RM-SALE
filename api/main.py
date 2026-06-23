@@ -51,6 +51,7 @@ class DailyPlanRequest(BaseModel):
 class DailyReportRequest(BaseModel):
     user: SessionUser
     report_date: str
+    activities: dict[str, str] = {}
 
 
 def user_dict(user: SessionUser) -> dict[str, Any]:
@@ -136,7 +137,7 @@ def save_daily_plan(payload: DailyPlanRequest):
 @app.post("/api/reports/daily/generate")
 def generate_daily_report(payload: DailyReportRequest):
     try:
-        report = crm.build_daily_report_data(user_dict(payload.user), payload.report_date)
+        report = crm.build_daily_report_data(user_dict(payload.user), payload.report_date, payload.activities)
         pdf = crm.generate_daily_report_pdf(report)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
@@ -152,6 +153,6 @@ def generate_daily_report(payload: DailyReportRequest):
 @app.post("/api/reports/daily/submit")
 def submit_daily_report(payload: DailyReportRequest):
     try:
-        return crm.submit_daily_report(user_dict(payload.user), payload.report_date)
+        return crm.submit_daily_report(user_dict(payload.user), payload.report_date, payload.activities)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc

@@ -584,7 +584,11 @@ def activity_sort_key(item: dict[str, Any]) -> str:
     return safe_text(item.get("time", "99:99"))
 
 
-def build_daily_report_data(user: dict[str, Any], report_date_text: str) -> dict[str, Any]:
+def report_customer_key(row: dict[str, Any]) -> str:
+    return safe_text(row.get("Customer_Key")) or crm_customer_key(row.get("Name", ""), row.get("Tel", ""), row.get("Salesperson_ID", ""))
+
+
+def build_daily_report_data(user: dict[str, Any], report_date_text: str, activities: dict[str, str] | None = None) -> dict[str, Any]:
     report_date = datetime.strptime(report_date_text, "%Y-%m-%d").date()
     gc = connect_to_google_sheets()
     visits = load_visit_data_for_crm(user)
@@ -654,6 +658,11 @@ def build_daily_report_data(user: dict[str, Any], report_date_text: str) -> dict
         ]
     ) if not new_leads.empty and "Potential_Level" in new_leads.columns else 0
 
+    customer_records = to_records(new_leads.head(20))
+    activity_lookup = activities or {}
+    for customer in customer_records:
+        customer["Report_Activity"] = safe_text(activity_lookup.get(report_customer_key(customer), ""))
+
     return {
         "report_id": f"RM-{safe_text(user.get('staff_id', 'USER'))}-{report_date.strftime('%Y%m%d')}-{now_cambodia().strftime('%H%M%S')}",
         "report_date": report_date_text,
@@ -674,7 +683,7 @@ def build_daily_report_data(user: dict[str, Any], report_date_text: str) -> dict
             "Opportunities Created": len(new_leads),
         },
         "timeline": timeline,
-        "new_customers": to_records(new_leads.head(20)),
+        "new_customers": customer_records,
         "next_actions": to_records(upcoming.drop(columns=["_follow"], errors="ignore")),
     }
 
@@ -697,7 +706,8 @@ def table_or_empty(
     styles = getSampleStyleSheet()
     body = body_style or ParagraphStyle("TableBody", parent=styles["BodyText"], fontSize=7.8, leading=10, textColor=BANK_INK)
     header = ParagraphStyle("TableHeader", parent=body, fontName="Helvetica-Bold", fontSize=7.5, leading=9, textColor=colors.white)
-    data = rows if len(rows) > 1 else rows + [["No records available.", "", "", ""][: len(rows[0])]]
+    empty_row = ["No records available."] + [""] * (len(rows[0]) - 1)
+    data = rows if len(rows) > 1 else rows + [empty_row]
     data = [[pdf_cell(value, header if row_index == 0 else body) for value in row] for row_index, row in enumerate(data)]
     table = Table(data, colWidths=widths, repeatRows=1)
     table.setStyle(
@@ -768,42 +778,9 @@ def generate_daily_report_pdf(report: dict[str, Any]) -> bytes:
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=14 * mm, leftMargin=14 * mm, topMargin=26 * mm, bottomMargin=18 * mm)
     styles = getSampleStyleSheet()
-    title = ParagraphStyle("ReportTitle", parent=styles["Title"], fontName="Helvetica-Bold", fontSize=20, leading=23, textColor=BANK_NAVY, alignment=TA_RIGHT, spaceAfter=3)
-    eyebrow = ParagraphStyle("Eyebrow", parent=styles["BodyText"], fontName="Helvetica-Bold", fontSize=7.5, leading=9, textColor=BANK_GOLD, alignment=TA_RIGHT)
-    subtitle = ParagraphStyle("Subtitle", parent=styles["BodyText"], fontSize=8, leading=10, alignment=TA_RIGHT, textColor=BANK_MUTED)
     section = ParagraphStyle("Section", parent=styles["Heading2"], fontName="Helvetica-Bold", fontSize=10.5, leading=13, textColor=BANK_NAVY, spaceBefore=11, spaceAfter=6)
-    small = ParagraphStyle("Small", parent=styles["BodyText"], fontSize=7.6, leading=10, alignment=TA_LEFT, textColor=BANK_MUTED)
     body = ParagraphStyle("PremiumTableBody", parent=styles["BodyText"], fontSize=7.5, leading=9.5, textColor=BANK_INK)
     story: list[Any] = []
-
-    masthead = Table(
-        [
-            [
-                [
-                    Paragraph("EXECUTIVE BANKING REPORT", eyebrow),
-                    Paragraph("Relationship Manager Activity Report", title),
-                    Paragraph(f"Reporting Date: {report['report_date']}<br/>Generated Date: {report['generated_at']}", subtitle),
-                ],
-            ]
-        ],
-        colWidths=[182 * mm],
-    )
-    masthead.setStyle(
-        TableStyle(
-            [
-                ("BACKGROUND", (0, 0), (-1, -1), colors.white),
-                ("BOX", (0, 0), (-1, -1), 0.4, BANK_LINE),
-                ("LINEBELOW", (0, 0), (-1, -1), 1.2, BANK_GOLD),
-                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("LEFTPADDING", (0, 0), (-1, -1), 10),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 10),
-                ("TOPPADDING", (0, 0), (-1, -1), 10),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
-            ]
-        )
-    )
-    story.append(masthead)
-    story.append(Spacer(1, 8))
 
     rm = report["rm"]
     rm_rows = [
@@ -815,48 +792,20 @@ def generate_daily_report_pdf(report: dict[str, Any]) -> bytes:
     story.append(Paragraph("RM Information", section))
     story.append(table_or_empty(rm_rows, [28 * mm, 64 * mm, 28 * mm, 62 * mm], BANK_NAVY, body))
 
-    kpis = report["kpis"]
-    story.append(Paragraph("Daily KPI Summary", section))
-    story.append(kpi_card_table(kpis))
-
-    story.append(Paragraph("Customer Activity Timeline", section))
-    timeline_rows = [["Time", "Customer Name", "Activity Type", "Remark", "Outcome"]]
-    for item in report["timeline"][:30]:
-        timeline_rows.append([safe_text(item.get("time")), safe_text(item.get("customer")), safe_text(item.get("type")), safe_text(item.get("remark")), safe_text(item.get("outcome"))])
-    story.append(table_or_empty(timeline_rows, [28 * mm, 42 * mm, 34 * mm, 52 * mm, 26 * mm], BANK_BLUE, body))
-
     story.append(Paragraph("New Potential Customers", section))
-    customer_rows = [["Customer", "Product", "Amount", "Potential", "Source"]]
+    customer_rows = [["Customer", "Product", "Amount", "Potential", "Source", "Activity"]]
     for row in report["new_customers"][:15]:
-        customer_rows.append([safe_text(row.get("Name")), safe_text(row.get("Potential_Products")), safe_text(row.get("Amount")), safe_text(row.get("Potential_Level")), safe_text(row.get("Source_Channel", row.get("Source_Type", "")))])
-    story.append(table_or_empty(customer_rows, [44 * mm, 40 * mm, 30 * mm, 28 * mm, 40 * mm], BANK_NAVY, body))
-
-    story.append(Paragraph("Next Action Plan", section))
-    action_rows = [["Date", "Customer", "Action", "Status"]]
-    for row in report["next_actions"][:12]:
-        action_rows.append([safe_text(row.get("Next_Follow_Up")), safe_text(row.get("Name")), safe_text(row.get("Remark", row.get("Notes", ""))), safe_text(row.get("Status"))])
-    story.append(table_or_empty(action_rows, [28 * mm, 48 * mm, 78 * mm, 28 * mm], BANK_BLUE, body))
-
-    story.append(Spacer(1, 10))
-    attestation = Table(
-        [[Paragraph("Submission Note", ParagraphStyle("AttestationTitle", parent=small, fontName="Helvetica-Bold", textColor=BANK_NAVY)), Paragraph("This report is generated from CRM activity records and is intended for internal productivity, pipeline, and customer engagement review.", small)]],
-        colWidths=[34 * mm, 148 * mm],
-    )
-    attestation.setStyle(
-        TableStyle(
+        customer_rows.append(
             [
-                ("BACKGROUND", (0, 0), (-1, -1), BANK_SOFT),
-                ("BOX", (0, 0), (-1, -1), 0.35, BANK_LINE),
-                ("LINELEFT", (0, 0), (0, -1), 2, BANK_GOLD),
-                ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ("TOPPADDING", (0, 0), (-1, -1), 8),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
-                ("LEFTPADDING", (0, 0), (-1, -1), 8),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+                safe_text(row.get("Name")),
+                safe_text(row.get("Potential_Products")),
+                safe_text(row.get("Amount")),
+                safe_text(row.get("Potential_Level")),
+                safe_text(row.get("Source_Channel", row.get("Source_Type", ""))),
+                safe_text(row.get("Report_Activity")),
             ]
         )
-    )
-    story.append(attestation)
+    story.append(table_or_empty(customer_rows, [34 * mm, 34 * mm, 24 * mm, 24 * mm, 34 * mm, 32 * mm], BANK_NAVY, body))
     doc.build(
         story,
         onFirstPage=lambda canvas, current_doc: draw_report_frame(canvas, current_doc, report),
@@ -889,8 +838,8 @@ def upload_pdf_to_drive(pdf_bytes: bytes, filename: str) -> dict[str, str]:
     }
 
 
-def submit_daily_report(user: dict[str, Any], report_date: str) -> dict[str, Any]:
-    report = build_daily_report_data(user, report_date)
+def submit_daily_report(user: dict[str, Any], report_date: str, activities: dict[str, str] | None = None) -> dict[str, Any]:
+    report = build_daily_report_data(user, report_date, activities)
     pdf = generate_daily_report_pdf(report)
     filename = f"{report['report_id']}.pdf"
     drive = upload_pdf_to_drive(pdf, filename)
