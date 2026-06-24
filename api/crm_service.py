@@ -124,6 +124,15 @@ def lead_label(level: Any) -> str:
     return "Cold"
 
 
+def lead_code(level: Any) -> str:
+    normalized = safe_text(level).upper()
+    if normalized in {"M", "WARM", "MEDIUM"}:
+        return "M"
+    if normalized in {"L", "COLD", "LOW"}:
+        return "L"
+    return "H"
+
+
 def parse_amount(value: Any) -> float:
     text = safe_text(value).upper().replace("$", "").replace(",", "").replace("USD", "").strip()
     multiplier = 1
@@ -795,7 +804,7 @@ def generate_daily_report_pdf(report: dict[str, Any]) -> bytes:
                 safe_text(row.get("Name")),
                 safe_text(row.get("Potential_Products")),
                 safe_text(row.get("Amount")),
-                safe_text(row.get("Potential_Level")),
+                lead_code(row.get("Potential_Level")),
                 safe_text(row.get("Source_Channel", row.get("Source_Type", ""))),
                 safe_text(row.get("Report_Activity")),
             ]
