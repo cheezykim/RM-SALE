@@ -781,13 +781,11 @@ def generate_daily_report_pdf(report: dict[str, Any]) -> bytes:
 
     rm = report["rm"]
     rm_rows = [
-        ["RM Information", "Details", "Report Control", "Details"],
-        ["RM Name", rm["name"], "Branch", rm["branch"]],
-        ["Position", rm["position"], "Staff ID", rm["staff_id"]],
-        ["Report ID", report["report_id"], "Status", "Generated"],
+        ["RM Name", "Branch", "Staff ID"],
+        [rm["name"], rm["branch"], rm["staff_id"]],
     ]
     story.append(Paragraph("RM Information", section))
-    story.append(table_or_empty(rm_rows, [28 * mm, 64 * mm, 28 * mm, 62 * mm], BANK_NAVY, body))
+    story.append(table_or_empty(rm_rows, [62 * mm, 60 * mm, 60 * mm], BANK_NAVY, body))
 
     story.append(Paragraph("New Potential Customers", section))
     customer_rows = [["Customer", "Product", "Amount", "Potential", "Source", "Activity"]]

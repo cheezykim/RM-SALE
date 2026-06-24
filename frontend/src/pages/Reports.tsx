@@ -79,10 +79,9 @@ export function Reports({
 
       <section className="crm-card p-5">
         <h3 className="text-sm font-extrabold uppercase text-slate-500">RM Information</h3>
-        <div className="mt-4 grid gap-3 md:grid-cols-4">
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
           <Info label="RM Name" value={user.username} />
           <Info label="Branch" value={user.branch || "-"} />
-          <Info label="Position" value={roleLabel(user.role)} />
           <Info label="Staff ID" value={user.staff_id} />
         </div>
       </section>
@@ -170,11 +169,6 @@ function sameDate(value: unknown, target: string) {
 function cleanText(value: unknown, fallback = "") {
   const text = String(value ?? "").trim();
   return text && text.toLowerCase() !== "nan" ? text : fallback;
-}
-
-function roleLabel(value: string) {
-  if (!value) return "Relationship Manager";
-  return value.toLowerCase() === "rm" ? "Relationship Manager" : value;
 }
 
 function customerKey(customer: PotentialCustomer) {
