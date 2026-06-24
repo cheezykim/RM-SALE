@@ -30,6 +30,7 @@ type CustomerForm = {
   Potential_Products: string;
   Remark: string;
   Notes: string;
+  Activities: string;
 };
 
 export function CustomerDrawer({
@@ -188,17 +189,13 @@ export function CustomerDrawer({
           )}
 
           {tab === "Activities" && (
-            <div className="crm-card bg-white/90 p-4">
-              <h3 className="mb-4 text-sm font-extrabold text-slate-950">Activity Timeline</h3>
-              <div className="space-y-3">
-                {(customer.Activities || "").split("\n").filter(Boolean).map((activity) => (
-                  <div key={activity} className="rounded-md border border-slate-100 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm">
-                    {activity}
-                  </div>
-                ))}
-                {!safeText(customer.Activities) && <p className="text-sm text-muted">No activities recorded yet.</p>}
-              </div>
-            </div>
+            <TextAreaPanel
+              icon={FileText}
+              title="Customer Activity"
+              value={form.Activities}
+              onChange={(value) => update("Activities", value)}
+              placeholder="Record call notes, follow-up activity, visit results, and next customer movement."
+            />
           )}
         </div>
 
@@ -235,7 +232,8 @@ function buildForm(customer: PotentialCustomer | null): CustomerForm {
     Next_Follow_Up: safeText(customer?.Next_Follow_Up),
     Potential_Products: safeText(customer?.Potential_Products, "SME Loan"),
     Remark: safeText(customer?.Remark),
-    Notes: safeText(customer?.Notes)
+    Notes: safeText(customer?.Notes),
+    Activities: safeText(customer?.Activities)
   };
 }
 

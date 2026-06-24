@@ -1,5 +1,6 @@
-import { Download, FileText, Send } from "lucide-react";
+import { Download, Eye, FileText, Send } from "lucide-react";
 import { useMemo, useState } from "react";
+import { CustomerDrawer } from "../components/CustomerDrawer";
 import { useGenerateDailyReport, useSubmitDailyReport } from "../hooks/useCrmData";
 import { todayISO } from "../lib/utils";
 import type { PotentialCustomer, User, VisitCustomer } from "../types";
@@ -8,15 +9,17 @@ import { LeadBadge } from "../components/ui/Badge";
 
 export function Reports({
   user,
-  potentials
+  potentials,
+  onSave
 }: {
   user: User;
   visits: VisitCustomer[];
   potentials: PotentialCustomer[];
+  onSave: (customer: PotentialCustomer, updates: Record<string, unknown>) => Promise<void>;
 }) {
   const [reportDate, setReportDate] = useState(todayISO());
   const [message, setMessage] = useState("");
-  const [activities, setActivities] = useState<Record<string, string>>({});
+  const [selected, setSelected] = useState<PotentialCustomer | null>(null);
   const generateReport = useGenerateDailyReport();
   const submitReport = useSubmitDailyReport();
 
@@ -27,14 +30,14 @@ export function Reports({
 
   async function generate() {
     setMessage("");
-    const blob = await generateReport.mutateAsync({ user, reportDate, activities });
+    const blob = await generateReport.mutateAsync({ user, reportDate });
     downloadBlob(blob, `rm_new_potential_report_${reportDate}.pdf`);
     setMessage("Daily report generated.");
   }
 
   async function submit() {
     setMessage("");
-    const result = await submitReport.mutateAsync({ user, reportDate, activities });
+    const result = await submitReport.mutateAsync({ user, reportDate });
     setMessage(`${result.message} Report ID: ${result.report_id}`);
   }
 
@@ -87,7 +90,7 @@ export function Reports({
       <section className="crm-card overflow-hidden">
         <div className="border-b border-border px-5 py-4">
           <h3 className="font-extrabold text-slate-950">New Potential Customers</h3>
-          <p className="mt-1 text-sm text-muted">Type the RM activity for each customer before generating the PDF.</p>
+          <p className="mt-1 text-sm text-muted">Activity comes from each customer's View Detail record.</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[920px] text-left text-sm">
@@ -99,6 +102,7 @@ export function Reports({
                 <th className="px-4 py-3">Potential</th>
                 <th className="px-4 py-3">Source</th>
                 <th className="px-4 py-3">Activity</th>
+                <th className="px-4 py-3">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -111,26 +115,37 @@ export function Reports({
                     <td className="px-4 py-4">{customer.Amount || "-"}</td>
                     <td className="px-4 py-4"><LeadBadge level={customer.Potential_Level} /></td>
                     <td className="px-4 py-4">{customer.Source_Channel || customer.Source_Type || "-"}</td>
+                    <td className="px-4 py-4 max-w-[280px]">
+                      <div className="line-clamp-3 whitespace-pre-line text-slate-700">{cleanText(customer.Activities, "No activity recorded.")}</div>
+                    </td>
                     <td className="px-4 py-4">
-                      <input
-                        className="input-control min-w-52 bg-white"
-                        value={activities[key] || ""}
-                        onChange={(event) => setActivities((current) => ({ ...current, [key]: event.target.value }))}
-                        placeholder="Calling, revisiting..."
-                      />
+                      <Button variant="outline" className="h-9 px-3" onClick={() => setSelected(customer)}>
+                        <Eye className="h-4 w-4" />
+                        View
+                      </Button>
                     </td>
                   </tr>
                 );
               })}
               {!newLeads.length && (
                 <tr>
-                  <td className="px-5 py-10 text-center text-muted" colSpan={6}>No new potential customers for this reporting date.</td>
+                  <td className="px-5 py-10 text-center text-muted" colSpan={7}>No new potential customers for this reporting date.</td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
       </section>
+      <CustomerDrawer
+        customer={selected}
+        initialTab="Activities"
+        onClose={() => setSelected(null)}
+        onSave={async (updates) => {
+          if (!selected) return;
+          await onSave(selected, updates);
+          setSelected(null);
+        }}
+      />
     </section>
   );
 }

@@ -64,14 +64,14 @@ export function useSaveDailyPlan() {
 
 export function useGenerateDailyReport() {
   return useMutation({
-    mutationFn: ({ user, reportDate, activities }: { user: User; reportDate: string; activities: Record<string, string> }) =>
-      crmApi.generateDailyReport(user, reportDate, activities)
+    mutationFn: ({ user, reportDate }: { user: User; reportDate: string }) =>
+      crmApi.generateDailyReport(user, reportDate)
   });
 }
 
 export function useSubmitDailyReport() {
   return useMutation({
-    mutationFn: ({ user, reportDate, activities }: { user: User; reportDate: string; activities: Record<string, string> }) =>
-      crmApi.submitDailyReport(user, reportDate, activities)
+    mutationFn: ({ user, reportDate }: { user: User; reportDate: string }) =>
+      crmApi.submitDailyReport(user, reportDate)
   });
 }

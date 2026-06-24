@@ -424,7 +424,9 @@ def update_potential_customer(row_number: int, updates: dict[str, Any]) -> bool:
             changes.append(field)
     values.update(updates)
     activities = values.get("Activities", "")
-    if "Status" in changes:
+    if changes == ["Activities"]:
+        activity_text = ""
+    elif "Status" in changes:
         activity_text = f"Status changed to {values.get('Status', 'Interested')}"
     elif "Next_Follow_Up" in changes:
         activity_text = f"Follow up scheduled for {values.get('Next_Follow_Up', '')}"
@@ -434,8 +436,8 @@ def update_potential_customer(row_number: int, updates: dict[str, Any]) -> bool:
         activity_text = "Customer details updated"
     else:
         activity_text = "Customer reviewed"
-    activity_line = f"{today_cambodia().strftime('%d %b %Y')} - {activity_text}"
-    if activity_line not in activities:
+    activity_line = f"{today_cambodia().strftime('%d %b %Y')} - {activity_text}" if activity_text else ""
+    if activity_line and activity_line not in activities:
         values["Activities"] = (activities + "\n" + activity_line).strip()
     values["Last_Updated"] = now_cambodia().strftime("%Y-%m-%d %H:%M:%S")
     worksheet.update(f"A{int(row_number)}", [[values.get(col, "") for col in headers]])
@@ -584,10 +586,6 @@ def activity_sort_key(item: dict[str, Any]) -> str:
     return safe_text(item.get("time", "99:99"))
 
 
-def report_customer_key(row: dict[str, Any]) -> str:
-    return safe_text(row.get("Customer_Key")) or crm_customer_key(row.get("Name", ""), row.get("Tel", ""), row.get("Salesperson_ID", ""))
-
-
 def build_daily_report_data(user: dict[str, Any], report_date_text: str, activities: dict[str, str] | None = None) -> dict[str, Any]:
     report_date = datetime.strptime(report_date_text, "%Y-%m-%d").date()
     gc = connect_to_google_sheets()
@@ -659,9 +657,8 @@ def build_daily_report_data(user: dict[str, Any], report_date_text: str, activit
     ) if not new_leads.empty and "Potential_Level" in new_leads.columns else 0
 
     customer_records = to_records(new_leads.head(20))
-    activity_lookup = activities or {}
     for customer in customer_records:
-        customer["Report_Activity"] = safe_text(activity_lookup.get(report_customer_key(customer), ""))
+        customer["Report_Activity"] = safe_text(customer.get("Activities"))
 
     return {
         "report_id": f"RM-{safe_text(user.get('staff_id', 'USER'))}-{report_date.strftime('%Y%m%d')}-{now_cambodia().strftime('%H%M%S')}",
