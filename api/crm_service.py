@@ -1,6 +1,7 @@
 import hashlib
 import json
 import os
+import re
 import tomllib
 from datetime import datetime, timedelta
 from io import BytesIO
@@ -131,6 +132,17 @@ def lead_code(level: Any) -> str:
     if normalized in {"L", "COLD", "LOW"}:
         return "L"
     return "H"
+
+
+def branch_source(value: Any) -> str:
+    text = safe_text(value)
+    if not text:
+        return ""
+    tokens = re.findall(r"[A-Za-z0-9]+", text)
+    for token in reversed(tokens):
+        if 3 <= len(token) <= 4:
+            return token
+    return text
 
 
 def parse_amount(value: Any) -> float:
@@ -805,7 +817,7 @@ def generate_daily_report_pdf(report: dict[str, Any]) -> bytes:
                 safe_text(row.get("Potential_Products")),
                 safe_text(row.get("Amount")),
                 lead_code(row.get("Potential_Level")),
-                safe_text(row.get("Source_Channel", row.get("Source_Type", ""))),
+                branch_source(row.get("Source_Channel", row.get("Source_Type", ""))),
                 safe_text(row.get("Report_Activity")),
             ]
         )

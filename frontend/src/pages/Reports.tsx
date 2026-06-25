@@ -77,12 +77,27 @@ export function Reports({
         </p>
       )}
 
-      <section className="crm-card p-5">
-        <h3 className="text-sm font-extrabold uppercase text-slate-500">RM Information</h3>
-        <div className="mt-4 grid gap-3 md:grid-cols-3">
-          <Info label="RM Name" value={user.username} />
-          <Info label="Branch" value={user.branch || "-"} />
-          <Info label="Staff ID" value={user.staff_id} />
+      <section className="crm-card overflow-hidden">
+        <div className="border-b border-border px-5 py-4">
+          <h3 className="font-extrabold text-slate-950">RM Information</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[560px] text-left text-sm">
+            <thead className="bg-bank text-xs uppercase text-white">
+              <tr>
+                <th className="px-4 py-3">RM Name</th>
+                <th className="px-4 py-3">Branch</th>
+                <th className="px-4 py-3">Staff ID</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="bg-white">
+                <td className="px-4 py-4 font-bold text-slate-950">{cleanText(user.username, "-")}</td>
+                <td className="px-4 py-4">{cleanText(user.branch, "-")}</td>
+                <td className="px-4 py-4">{cleanText(user.staff_id, "-")}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
 
@@ -113,7 +128,7 @@ export function Reports({
                     <td className="px-4 py-4">{customer.Potential_Products || "-"}</td>
                     <td className="px-4 py-4">{customer.Amount || "-"}</td>
                     <td className="px-4 py-4"><LeadBadge level={customer.Potential_Level} /></td>
-                    <td className="px-4 py-4">{customer.Source_Channel || customer.Source_Type || "-"}</td>
+                    <td className="px-4 py-4">{branchSource(customer.Source_Channel || customer.Source_Type)}</td>
                     <td className="px-4 py-4 max-w-[280px]">
                       <div className="line-clamp-3 whitespace-pre-line text-slate-700">{cleanText(customer.Activities, "No activity recorded.")}</div>
                     </td>
@@ -149,15 +164,6 @@ export function Reports({
   );
 }
 
-function Info({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-md border border-border bg-slate-50 px-4 py-3">
-      <p className="text-[11px] font-extrabold uppercase text-muted">{label}</p>
-      <p className="mt-1 truncate text-sm font-extrabold text-slate-950">{value}</p>
-    </div>
-  );
-}
-
 function sameDate(value: unknown, target: string) {
   const text = cleanText(value);
   if (!text) return false;
@@ -169,6 +175,14 @@ function sameDate(value: unknown, target: string) {
 function cleanText(value: unknown, fallback = "") {
   const text = String(value ?? "").trim();
   return text && text.toLowerCase() !== "nan" ? text : fallback;
+}
+
+function branchSource(value: unknown) {
+  const text = cleanText(value, "-");
+  if (text === "-") return text;
+  const tokens = text.match(/[A-Za-z0-9]+/g) || [];
+  const code = [...tokens].reverse().find((token) => /^[A-Za-z0-9]{3,4}$/.test(token));
+  return code || text;
 }
 
 function customerKey(customer: PotentialCustomer) {
