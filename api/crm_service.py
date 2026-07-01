@@ -87,13 +87,9 @@ CRM_COLUMNS = [
 ]
 
 NAV_ITEMS = [
-    "Dashboard",
     "Daily Planning",
     "Market Visit Customers",
     "My Potential Customers",
-    "Performance Analytics",
-    "Reports",
-    "Settings",
 ]
 
 

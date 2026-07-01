@@ -15,7 +15,7 @@ const saved = localStorage.getItem(STORAGE_KEY);
 
 export const useSessionStore = create<SessionState>((set) => ({
   user: saved ? (JSON.parse(saved) as User) : null,
-  navigation: ["Dashboard", "Daily Planning", "Market Visit Customers", "My Potential Customers", "Performance Analytics", "Reports", "Settings"],
+  navigation: ["Daily Planning", "Market Visit Customers", "My Potential Customers"],
   setUser: (user) => {
     if (user) localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
     else localStorage.removeItem(STORAGE_KEY);
@@ -27,4 +27,3 @@ export const useSessionStore = create<SessionState>((set) => ({
     set({ user: null });
   }
 }));
-
