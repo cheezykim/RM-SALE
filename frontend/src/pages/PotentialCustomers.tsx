@@ -53,7 +53,7 @@ export function PotentialCustomers({
       cell: ({ row }) => (
         <div className="min-w-[210px]">
           <div className="font-extrabold text-slate-950">{safeText(row.original.Name, "Unnamed customer")}</div>
-          <div className="mt-1 text-xs font-medium text-muted">{safeText(row.original.Tel, "No phone")}</div>
+          <div className="mt-1 text-xs font-medium text-muted">Phone Number: {safeText(row.original.Tel, "No phone")}</div>
           <div className="mt-2 inline-flex rounded-md bg-bank-soft px-2 py-1 text-[11px] font-bold text-bank-dark">
             Source: {safeText(row.original.Source_Type, row.original.Source_Channel || row.original.Sender_Name || "Market Visit")}
           </div>
