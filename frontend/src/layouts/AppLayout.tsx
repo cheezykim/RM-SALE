@@ -79,7 +79,6 @@ export function AppLayout({ user, active, children }: { user: User; active: stri
               </div>
               <div className="hidden sm:block">
                 <p className="text-sm font-extrabold">{user.username}</p>
-                <p className="text-xs text-muted">{user.role === "rm" ? "Sales Officer" : user.role}</p>
               </div>
               <ChevronDown className="hidden h-4 w-4 text-slate-700 sm:block" />
             </div>
