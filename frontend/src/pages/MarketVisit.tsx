@@ -48,7 +48,7 @@ export function MarketVisit({ user, visits }: { user: User; visits: VisitCustome
         <div className="min-w-[210px]">
           <div className="font-extrabold text-slate-950">{safeText(row.original.Name, "Unnamed customer")}</div>
           <div className="mt-1 text-xs font-medium text-muted">Phone Number: {safeText(row.original.Tel, "No phone")}</div>
-          <div className="mt-2 inline-flex rounded-md bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">Name: {safeText(row.original.Sender_Name, "Market Visit")}</div>
+          <div className="mt-2 inline-flex rounded-md bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">Sale: {safeText(row.original.Sender_Name, "Market Visit")}</div>
         </div>
       )
     },
