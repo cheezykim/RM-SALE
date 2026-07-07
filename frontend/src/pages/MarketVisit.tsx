@@ -143,11 +143,11 @@ export function MarketVisit({ user, visits }: { user: User; visits: VisitCustome
   return (
     <section className="space-y-5">
       <div>
-        <h2 className="flex items-center gap-3 text-2xl font-extrabold">
-          <Users className="h-7 w-7 text-blue-700" />
+        <h2 className="page-title flex items-center gap-3">
+          <Users className="h-7 w-7 text-bank dark:text-emerald-300" />
           Market Visit Customer
         </h2>
-        <p className="mt-1 text-sm text-muted">List of customers visited in market. Click on a row to view details and mark as potential.</p>
+        <p className="section-note">List of customers visited in market. Click on a row to view details and mark as potential.</p>
       </div>
 
       <div className="crm-card p-4">
@@ -177,8 +177,8 @@ export function MarketVisit({ user, visits }: { user: User; visits: VisitCustome
         )}
       </div>
 
-      <div className="rounded-md bg-blue-50 px-4 py-3 text-sm font-bold text-blue-700">Showing {filtered.length.toLocaleString()} customers</div>
-      {message && <div className="rounded-md bg-bank-soft px-4 py-3 text-sm font-bold text-bank-dark">{message}</div>}
+      <div className="rounded-xl border border-blue-200/70 bg-blue-50/80 px-4 py-3 text-sm font-bold text-blue-700 shadow-sm backdrop-blur dark:border-blue-400/20 dark:bg-blue-500/10 dark:text-blue-200">Showing {filtered.length.toLocaleString()} customers</div>
+      {message && <div className="rounded-xl border border-bank/20 bg-bank-soft/80 px-4 py-3 text-sm font-bold text-bank-dark shadow-sm backdrop-blur dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200">{message}</div>}
       <DataTable data={filtered} columns={columns} search={query} onRowClick={(customer) => { setDetailTab("Overview"); setSelected(customer); }} />
       <VisitCustomerDrawer customer={selected} initialTab={detailTab} onClose={() => setSelected(null)} onAddPotential={addSelected} saving={addPotential.isPending} />
     </section>

@@ -341,7 +341,7 @@ function TextAreaPanel({
         <h3 className="text-sm font-extrabold text-slate-950">{title}</h3>
       </div>
       <textarea
-        className="min-h-72 w-full rounded-md border border-border bg-white/90 px-4 py-3 text-sm leading-6 outline-none transition focus:border-bank focus:ring-2 focus:ring-bank/15"
+        className="min-h-72 w-full rounded-md border border-border bg-white/90 px-4 py-3 text-sm leading-6 outline-none transition focus:border-bank focus:ring-2 focus:ring-bank/20"
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}

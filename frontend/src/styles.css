@@ -10,6 +10,7 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: Inter, "Segoe UI", Arial, sans-serif;
+    min-width: 320px;
   }
 
   button,
@@ -22,15 +23,31 @@
 
 @layer components {
   .crm-card {
-    @apply rounded-lg border border-border bg-white shadow-sm;
+    @apply rounded-xl border border-white/70 bg-white/75 shadow-glass backdrop-blur-xl transition duration-200 dark:border-white/10 dark:bg-slate-900/70 dark:shadow-none;
+  }
+
+  .crm-card:hover {
+    @apply border-bank/20 shadow-lift dark:border-emerald-400/20;
   }
 
   .input-control {
-    @apply h-10 w-full rounded-md border border-border bg-white px-3 text-sm outline-none transition focus:border-bank focus:ring-2 focus:ring-bank/15;
+    @apply h-11 w-full rounded-lg border border-border bg-white/90 px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-bank focus:bg-white focus:ring-4 focus:ring-bank/10 dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-100 dark:focus:border-emerald-400 dark:focus:ring-emerald-400/10;
   }
 
   .label {
-    @apply mb-2 block text-xs font-semibold text-slate-700;
+    @apply mb-2 block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 dark:text-slate-400;
+  }
+
+  .page-title {
+    @apply text-2xl font-extrabold tracking-tight text-slate-950 dark:text-white;
+  }
+
+  .section-note {
+    @apply mt-1 text-sm font-medium text-muted dark:text-slate-400;
+  }
+
+  .glass-panel {
+    @apply rounded-xl border border-white/70 bg-white/70 shadow-glass backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70;
   }
 }
 

@@ -29,14 +29,17 @@ export function DailyPlanning({ user, initialTasks }: { user: User; initialTasks
 
   return (
     <section className="space-y-5">
-      <h2 className="text-2xl font-extrabold">Daily Planning</h2>
+      <div>
+        <h2 className="page-title">Daily Planning</h2>
+        <p className="section-note">Plan customer coverage, market activity, and relationship manager execution.</p>
+      </div>
       <div className="crm-card p-5">
         <label className="label">Plan Date</label>
         <input className="input-control max-w-xs" type="date" value={planDate} onChange={(event) => setPlanDate(event.target.value)} />
       </div>
       {tasks.map((task, index) => (
         <div key={index} className="crm-card p-5">
-          <h3 className="mb-4 text-lg font-extrabold">Activity {index + 1}</h3>
+          <h3 className="mb-4 text-lg font-extrabold text-slate-950 dark:text-white">Activity {index + 1}</h3>
           <div className="grid gap-4 md:grid-cols-5">
             <Field label="Start" value={task.start_time} type="time" onChange={(value) => updateTask(index, { start_time: value })} />
             <Field label="End" value={task.end_time} type="time" onChange={(value) => updateTask(index, { end_time: value })} />
@@ -64,7 +67,7 @@ export function DailyPlanning({ user, initialTasks }: { user: User; initialTasks
         </Button>
         <Button onClick={submit} disabled={savePlan.isPending}>{savePlan.isPending ? "Submitting..." : "Submit Daily Plan"}</Button>
       </div>
-      {message && <p className="rounded-md bg-bank-soft px-4 py-3 text-sm font-bold text-bank-dark">{message}</p>}
+      {message && <p className="rounded-xl border border-bank/20 bg-bank-soft/80 px-4 py-3 text-sm font-bold text-bank-dark shadow-sm backdrop-blur dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200">{message}</p>}
     </section>
   );
 

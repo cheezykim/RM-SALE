@@ -32,11 +32,11 @@ export function DataTable<T>({ data, columns, search = "", pageSize = 30, onRowC
     <div className="crm-card overflow-hidden">
       <div className="overflow-x-auto">
         <table className="min-w-[1040px] w-full border-collapse text-sm">
-          <thead className="bg-slate-50/80">
+          <thead className="bg-slate-50/80 backdrop-blur dark:bg-slate-950/60">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <th key={header.id} className="border-b border-border px-5 py-3 text-left text-[11px] font-extrabold uppercase tracking-wide text-slate-500">
+                  <th key={header.id} className="border-b border-border px-5 py-4 text-left text-[11px] font-extrabold uppercase tracking-wide text-slate-500 dark:border-white/10 dark:text-slate-400">
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </th>
                 ))}
@@ -48,11 +48,11 @@ export function DataTable<T>({ data, columns, search = "", pageSize = 30, onRowC
               table.getRowModel().rows.map((row, index) => (
                 <tr
                   key={row.id}
-                  className={`border-b border-slate-100 bg-white transition hover:bg-slate-50 ${onRowClick ? "cursor-pointer" : ""}`}
+                  className={`border-b border-slate-100/80 bg-white/60 transition hover:bg-bank-mist/80 dark:border-white/5 dark:bg-transparent dark:hover:bg-white/5 ${onRowClick ? "cursor-pointer" : ""}`}
                   onClick={() => onRowClick?.(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-5 py-4 align-top text-slate-800">
+                    <td key={cell.id} className="px-5 py-4 align-top text-slate-800 dark:text-slate-200">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}
@@ -68,7 +68,7 @@ export function DataTable<T>({ data, columns, search = "", pageSize = 30, onRowC
           </tbody>
         </table>
       </div>
-      <div className="flex flex-col gap-3 border-t border-border px-4 py-3 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 border-t border-border bg-white/50 px-4 py-3 text-xs font-semibold text-muted dark:border-white/10 dark:bg-slate-950/30 dark:text-slate-400 sm:flex-row sm:items-center sm:justify-between">
         <div className="order-2 sm:order-1">
           {table.getFilteredRowModel().rows.length
             ? `${table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}-${Math.min(

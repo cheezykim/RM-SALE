@@ -140,8 +140,8 @@ export function PotentialCustomers({
       <div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2 className="text-2xl font-extrabold">My Potential Customers</h2>
-            <p className="mt-1 text-sm text-muted">List of customers you have marked as potential.</p>
+            <h2 className="page-title">My Potential Customers</h2>
+            <p className="section-note">List of customers you have marked as potential.</p>
           </div>
           <Button onClick={() => setAddOpen(true)} className="sm:w-auto">
             <Plus className="h-4 w-4" />
@@ -150,7 +150,7 @@ export function PotentialCustomers({
         </div>
       </div>
       {message && (
-        <div className="flex items-start gap-3 rounded-md border border-bank/20 bg-bank-soft px-4 py-3 text-sm font-bold text-bank-dark">
+        <div className="flex items-start gap-3 rounded-xl border border-bank/20 bg-bank-soft/80 px-4 py-3 text-sm font-bold text-bank-dark shadow-sm backdrop-blur dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200">
           <Bell className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{message}</span>
         </div>
@@ -175,7 +175,7 @@ export function PotentialCustomers({
           </div>
         </div>
       </div>
-      <div className="rounded-md bg-bank-soft px-4 py-3 text-sm font-bold text-bank-dark">Showing {filtered.length.toLocaleString()} potential customers</div>
+      <div className="rounded-xl border border-bank/20 bg-bank-soft/80 px-4 py-3 text-sm font-bold text-bank-dark shadow-sm backdrop-blur dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200">Showing {filtered.length.toLocaleString()} potential customers</div>
       <DataTable data={filtered} columns={columns} search={query} onRowClick={(customer) => { setDetailTab("Overview"); setSelected(customer); }} />
       <CustomerDrawer
         customer={selected}
@@ -309,7 +309,7 @@ function AddCustomerDrawer({
           <div className="mt-4">
             <label className="label">Remark</label>
             <textarea
-              className="min-h-28 w-full rounded-md border border-border bg-white px-3 py-3 text-sm outline-none transition focus:border-bank focus:ring-2 focus:ring-bank/15"
+              className="min-h-28 w-full rounded-md border border-border bg-white px-3 py-3 text-sm outline-none transition focus:border-bank focus:ring-2 focus:ring-bank/20"
               value={safeText(form.Remark)}
               onChange={(event) => update("Remark", event.target.value)}
               placeholder="Add customer background, collateral notes, urgency, or relationship context."

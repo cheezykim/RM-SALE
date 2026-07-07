@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { LockKeyhole } from "lucide-react";
+import { Landmark, LockKeyhole, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useLogin } from "../hooks/useCrmData";
 import { Button } from "./ui/Button";
@@ -22,12 +22,19 @@ export function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-6">
-      <form onSubmit={submit} className="crm-card w-full max-w-sm p-8">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background p-6">
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,rgba(0,132,61,0.13),transparent_32%),linear-gradient(135deg,#f8fcff_0%,#edf8f3_48%,#f4f7fb_100%)]" />
+      <form onSubmit={submit} className="crm-card relative w-full max-w-md p-8">
         <div className="mb-8 flex flex-col items-center text-center">
-          <img src="/api/logo" className="mb-4 h-20 w-20 object-contain" alt="Chip Mong Bank" />
-          <h1 className="text-xl font-extrabold text-bank">CUSTOMER MANAGEMENT SYSTEM</h1>
-          <p className="mt-2 text-sm text-muted">Enter your password to access the system</p>
+          <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-2xl border border-white/70 bg-white/80 p-3 shadow-glass backdrop-blur">
+            <img src="/api/logo" className="h-full w-full object-contain" alt="Chip Mong Bank" />
+          </div>
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-bank/20 bg-bank-soft/80 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wide text-bank-dark">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            Secure Banking Workspace
+          </div>
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-950">Customer Relationship Center</h1>
+          <p className="mt-2 text-sm font-medium text-muted">Access the commercial banking CRM system</p>
         </div>
         <label className="label">Password</label>
         <div className="relative">
@@ -38,6 +45,10 @@ export function Login() {
         <Button className="mt-5 w-full" disabled={login.isPending || !password}>
           {login.isPending ? "Signing in..." : "Login"}
         </Button>
+        <div className="mt-6 flex items-center justify-center gap-2 text-xs font-bold text-muted">
+          <Landmark className="h-4 w-4 text-bank" />
+          Customer 360, pipeline, and market visit management
+        </div>
       </form>
     </div>
   );
