@@ -14,6 +14,7 @@ type PipelineUpdate = {
   Status?: string;
   Last_Updated: string;
 };
+const pipelineStatuses = ["Not interested / Need", "Open to more information", "Interested-need appointment", "Study initiated"];
 
 export function PotentialCustomers({
   user,
@@ -179,7 +180,7 @@ export function PotentialCustomers({
               <input className="input-control pl-9" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search customer..." />
             </div>
           </div>
-          <Select label="Status" value={status} options={["All", ...Array.from(new Set(displayedPotentials.map((row) => row.Status).filter(Boolean)))]} onChange={setStatus} />
+          <Select label="Status" value={status} options={["All", ...pipelineStatuses]} onChange={setStatus} />
           <Select label="Signal" value={level} options={["All", "H", "M", "L"]} onChange={setLevel} />
           <Select label="Date Added" value={dateFilter} options={["All", "Today", "Last 7 Days", "This Month"]} onChange={setDateFilter} />
           <div className="flex items-end">
