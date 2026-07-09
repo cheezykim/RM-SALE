@@ -1,13 +1,76 @@
 import { CalendarClock, Eye, Filter, MapPin, Phone, Search, Store, UserRoundCheck, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "../components/ui/Button";
-import type { VisitCustomer } from "../types";
 
-export function MyMerchant({ visits }: { visits: VisitCustomer[] }) {
+type MerchantSample = {
+  name: string;
+  owner: string;
+  business: string;
+  phone: string;
+  source: string;
+  status: string;
+  nextAction: string;
+  messageDate: string;
+};
+
+const sampleMerchants: MerchantSample[] = [
+  {
+    name: "Sokha Mini Mart",
+    owner: "Kang Phengkheang",
+    business: "Grocery and household retail",
+    phone: "012 458 901",
+    source: "Assigned Merchant",
+    status: "Active",
+    nextAction: "Call merchant",
+    messageDate: "2026-07-06"
+  },
+  {
+    name: "Malis Coffee & Bakery",
+    owner: "Kang Phengkheang",
+    business: "Cafe and bakery",
+    phone: "015 772 118",
+    source: "Portfolio Transfer",
+    status: "Monitor",
+    nextAction: "Schedule follow up",
+    messageDate: "2026-07-02"
+  },
+  {
+    name: "Vattanac Mobile Shop",
+    owner: "Kang Phengkheang",
+    business: "Phone and accessory sales",
+    phone: "096 334 2210",
+    source: "Assigned Merchant",
+    status: "Active",
+    nextAction: "Collect updated documents",
+    messageDate: "2026-06-28"
+  },
+  {
+    name: "Borei Furniture Center",
+    owner: "Kang Phengkheang",
+    business: "Furniture showroom",
+    phone: "017 889 450",
+    source: "Existing Coverage",
+    status: "Low Priority",
+    nextAction: "Review profile",
+    messageDate: "2026-06-10"
+  },
+  {
+    name: "Kandal Fresh Market Stall",
+    owner: "Kang Phengkheang",
+    business: "Fresh produce wholesaler",
+    phone: "093 512 786",
+    source: "Assigned Merchant",
+    status: "Active",
+    nextAction: "Visit merchant",
+    messageDate: "2026-07-08"
+  }
+];
+
+export function MyMerchant() {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("All");
 
-  const merchants = useMemo(() => visits.map(toMerchant), [visits]);
+  const merchants = sampleMerchants;
   const statusOptions = ["All", ...Array.from(new Set(merchants.map((merchant) => merchant.status))).filter(Boolean)];
   const filtered = useMemo(() => {
     return merchants.filter((merchant) => {
@@ -15,7 +78,7 @@ export function MyMerchant({ visits }: { visits: VisitCustomer[] }) {
       if (!query) return true;
       return Object.values(merchant).join(" ").toLowerCase().includes(query.toLowerCase());
     });
-  }, [merchants, query, status]);
+  }, [query, status]);
 
   const activeCount = merchants.filter((merchant) => merchant.status !== "Low Priority").length;
   const followUpCount = merchants.filter((merchant) => merchant.nextAction !== "Review profile").length;
@@ -108,20 +171,6 @@ export function MyMerchant({ visits }: { visits: VisitCustomer[] }) {
   );
 }
 
-function toMerchant(row: VisitCustomer) {
-  const level = safeText(row.Potential_Level, "H").toUpperCase();
-  return {
-    name: safeText(row.Name, "Unnamed merchant"),
-    owner: safeText(row.Sender_Name, "Assigned RM"),
-    business: safeText(row.Business, "Business not recorded"),
-    phone: safeText(row.Tel, "No phone"),
-    source: safeText(row.Source_Channel, "Market Visit"),
-    status: level === "L" ? "Low Priority" : level === "M" ? "Monitor" : "Active",
-    nextAction: level === "L" ? "Review profile" : level === "M" ? "Schedule follow up" : "Call merchant",
-    messageDate: safeText(row.Message_Date)
-  };
-}
-
 function isThisMonth(value: string) {
   if (!value) return false;
   const date = new Date(value);
@@ -179,9 +228,4 @@ function IconButton({ title, icon: Icon }: { title: string; icon: typeof Store }
 function StatusPill({ value }: { value: string }) {
   const color = value === "Active" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : value === "Monitor" ? "border-amber-200 bg-amber-50 text-amber-700" : "border-slate-200 bg-slate-100 text-slate-600";
   return <span className={`inline-flex rounded-lg border px-2.5 py-1 text-xs font-extrabold ${color}`}>{value}</span>;
-}
-
-function safeText(value: unknown, fallback = "") {
-  const text = String(value ?? "").trim();
-  return text && text.toLowerCase() !== "nan" ? text : fallback;
 }

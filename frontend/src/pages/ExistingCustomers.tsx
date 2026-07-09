@@ -2,13 +2,70 @@ import { CalendarDays, ClipboardList, Eye, FileText, Filter, Landmark, NotebookP
 import { useMemo, useState } from "react";
 import { Button } from "../components/ui/Button";
 import { StatusBadge } from "../components/ui/Badge";
-import type { PotentialCustomer } from "../types";
 
-export function ExistingCustomers({ customers }: { customers: PotentialCustomer[] }) {
+type ExistingCustomerSample = {
+  name: string;
+  phone: string;
+  relationship: string;
+  product: string;
+  branch: string;
+  lastContact: string;
+  status: string;
+};
+
+const sampleExistingCustomers: ExistingCustomerSample[] = [
+  {
+    name: "Chan Sophea",
+    phone: "012 901 778",
+    relationship: "Payroll and SME owner",
+    product: "SME Loan",
+    branch: "Phnom Penh Main",
+    lastContact: "2026-07-08",
+    status: "Follow Up"
+  },
+  {
+    name: "Lim Vicheka",
+    phone: "096 441 2099",
+    relationship: "Deposit customer",
+    product: "Fixed Deposit",
+    branch: "Sen Sok",
+    lastContact: "2026-07-04",
+    status: "Interested"
+  },
+  {
+    name: "Heng Dara Trading",
+    phone: "015 660 452",
+    relationship: "Business facility customer",
+    product: "Working Capital Loan",
+    branch: "Chroy Changvar",
+    lastContact: "2026-06-29",
+    status: "Document Collection"
+  },
+  {
+    name: "Srey Mom Boutique",
+    phone: "017 205 331",
+    relationship: "Long-term retail customer",
+    product: "Merchant Account",
+    branch: "Toul Kork",
+    lastContact: "2026-06-22",
+    status: "Converted"
+  },
+  {
+    name: "Kosal Construction",
+    phone: "093 780 114",
+    relationship: "Existing loan customer",
+    product: "Equipment Loan",
+    branch: "Kandal",
+    lastContact: "2026-07-01",
+    status: "Negotiation"
+  }
+];
+
+export function ExistingCustomers() {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("All");
 
-  const records = useMemo(() => customers.map(toExistingCustomer), [customers]);
+  const records = sampleExistingCustomers;
   const statusOptions = ["All", ...Array.from(new Set(records.map((record) => record.status))).filter(Boolean)];
   const filtered = useMemo(() => {
     return records.filter((record) => {
@@ -16,7 +73,7 @@ export function ExistingCustomers({ customers }: { customers: PotentialCustomer[
       if (!query) return true;
       return Object.values(record).join(" ").toLowerCase().includes(query.toLowerCase());
     });
-  }, [records, query, status]);
+  }, [query, status]);
 
   const activeLoans = records.filter((record) => record.product.toLowerCase().includes("loan")).length;
   const deposits = records.filter((record) => record.product.toLowerCase().includes("deposit")).length;
@@ -109,18 +166,6 @@ export function ExistingCustomers({ customers }: { customers: PotentialCustomer[
   );
 }
 
-function toExistingCustomer(row: PotentialCustomer) {
-  return {
-    name: safeText(row.Name, "Unnamed customer"),
-    phone: safeText(row.Tel, "No phone"),
-    relationship: safeText(row.Source_Type, row.Source_Channel || "Existing Relationship"),
-    product: safeText(row.Potential_Products, row.Loan_Type || "Product review"),
-    branch: safeText(row.Bank, "Branch not recorded"),
-    lastContact: safeText(row.Last_Updated, row.Date_Added || "No contact"),
-    status: safeText(row.Status, "Interested")
-  };
-}
-
 function PageHeader({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <div className="crm-card p-5">
@@ -166,9 +211,4 @@ function IconButton({ title, icon: Icon }: { title: string; icon: typeof Users }
       <Icon className="h-4 w-4" />
     </button>
   );
-}
-
-function safeText(value: unknown, fallback = "") {
-  const text = String(value ?? "").trim();
-  return text && text.toLowerCase() !== "nan" ? text : fallback;
 }
