@@ -100,7 +100,7 @@ export function PotentialCustomers({
       accessorKey: "Status",
       header: "Pipeline",
       cell: ({ row }) => (
-        <div className={`min-w-[150px] space-y-2 rounded-xl px-3 py-2 transition ${rowKey(row.original) === recentPipelineRow ? "bg-emerald-100/70 ring-1 ring-emerald-200 dark:bg-emerald-500/10 dark:ring-emerald-400/20" : ""}`}>
+        <div className="min-w-[150px] space-y-2">
           <StatusBadge status={row.original.Status} />
           <div className="text-xs font-semibold text-muted">Updated {formatDate(row.original.Last_Updated, "-")}</div>
         </div>
