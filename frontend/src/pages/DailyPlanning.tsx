@@ -71,7 +71,7 @@ export function DailyPlanning({ user, initialTasks }: { user: User; initialTasks
               <h2 className="page-title">Daily Planning</h2>
             </div>
           </div>
-          <div className="hidden min-h-20 w-56 rounded-l-full bg-emerald-50/90 md:block dark:bg-emerald-500/10" />
+          <HeaderCalendarArt />
         </div>
       </div>
 
@@ -181,6 +181,32 @@ export function DailyPlanning({ user, initialTasks }: { user: User; initialTasks
     next[taskIndex].customers[customerIndex] = { ...next[taskIndex].customers[customerIndex], [field]: value };
     setTasks(next);
   }
+}
+
+function HeaderCalendarArt() {
+  return (
+    <div className="relative hidden h-24 w-64 shrink-0 overflow-hidden rounded-l-full bg-emerald-50/90 md:block dark:bg-emerald-500/10" aria-hidden="true">
+      <div className="absolute right-7 top-4 h-16 w-24 rotate-3 rounded-xl border border-emerald-200 bg-white shadow-sm dark:border-emerald-400/20 dark:bg-slate-900">
+        <div className="flex h-5 items-center gap-2 rounded-t-xl bg-emerald-500 px-3">
+          <span className="h-2 w-2 rounded-full bg-white/90" />
+          <span className="h-2 w-2 rounded-full bg-white/90" />
+          <span className="h-2 w-2 rounded-full bg-white/90" />
+        </div>
+        <div className="grid grid-cols-3 gap-1.5 p-3">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <span key={index} className="flex h-4 items-center justify-center rounded bg-emerald-50 text-emerald-500 dark:bg-emerald-500/10">
+              <CheckCircle2 className="h-3 w-3" />
+            </span>
+          ))}
+        </div>
+      </div>
+      <div className="absolute bottom-3 right-2 flex h-14 w-14 items-center justify-center rounded-full border-4 border-white bg-emerald-100 text-bank shadow-sm dark:border-slate-950 dark:bg-emerald-500/20 dark:text-emerald-200">
+        <CalendarDays className="h-7 w-7" />
+      </div>
+      <div className="absolute bottom-2 left-11 h-12 w-20 rounded-t-full bg-emerald-100/80 dark:bg-emerald-500/10" />
+      <div className="absolute bottom-2 left-4 h-8 w-14 rounded-t-full bg-emerald-200/60 dark:bg-emerald-400/10" />
+    </div>
+  );
 }
 
 function WorkflowChip({ icon: Icon, label }: { icon: typeof CalendarDays; label: string }) {
