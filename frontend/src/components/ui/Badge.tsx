@@ -25,15 +25,15 @@ export function normalizeLeadLevel(level?: string) {
 }
 
 export function StatusBadge({ status }: { status?: string }) {
-  const value = status || "Interested";
+  const value = status || "Not interested / Need";
   const normalized = value.toLowerCase();
   const color =
-    normalized === "converted"
+    normalized === "study initiated"
       ? "border-emerald-200/80 bg-emerald-50/90 text-emerald-800 dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200"
-      : normalized === "lost"
+      : normalized === "not interested / need"
         ? "border-red-200/80 bg-red-50/90 text-red-800 dark:border-red-400/20 dark:bg-red-500/10 dark:text-red-200"
-        : ["follow up", "proposal sent", "document collection", "negotiation"].includes(normalized)
+        : normalized === "interested-need appointment"
           ? "border-blue-200/80 bg-blue-50/90 text-blue-800 dark:border-blue-400/20 dark:bg-blue-500/10 dark:text-blue-200"
-          : "border-bank/20 bg-bank-soft/90 text-bank-dark dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200";
+          : "border-amber-200/80 bg-amber-50/90 text-amber-800 dark:border-amber-400/20 dark:bg-amber-500/10 dark:text-amber-200";
   return <span className={cn("inline-flex rounded-lg border px-2.5 py-1 text-xs font-bold shadow-sm", color)}>{value}</span>;
 }

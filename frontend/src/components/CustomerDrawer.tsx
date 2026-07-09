@@ -4,7 +4,7 @@ import type { PotentialCustomer } from "../types";
 import { Button } from "./ui/Button";
 import { LeadBadge, normalizeLeadLevel, StatusBadge } from "./ui/Badge";
 
-const statuses = ["Interested", "Follow Up", "Proposal Sent", "Document Collection", "Negotiation", "Converted", "Lost"];
+const statuses = ["Not interested / Need", "Open to more information", "Interested-need appointment", "Study initiated"];
 const levels = ["H", "M", "L"];
 const products = ["SME Loan", "Housing Loan", "Auto Loan", "Working Capital Loan", "Other Products"];
 const tabs = ["Overview", "Remark", "Notes", "Activities"] as const;
@@ -227,7 +227,7 @@ function buildForm(customer: PotentialCustomer | null): CustomerForm {
     Maturity: safeText(customer?.Maturity),
     Source_Type: safeText(customer?.Source_Type),
     Source_Channel: safeText(customer?.Source_Channel),
-    Status: safeText(customer?.Status, "Interested"),
+    Status: safeText(customer?.Status, "Not interested / Need"),
     Potential_Level: normalizeLeadLevel(customer?.Potential_Level),
     Next_Follow_Up: safeText(customer?.Next_Follow_Up),
     Potential_Products: safeText(customer?.Potential_Products, "SME Loan"),

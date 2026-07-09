@@ -196,7 +196,11 @@ export function PotentialCustomers({
         columns={columns}
         search={query}
         onRowClick={(customer) => { setDetailTab("Overview"); setSelected(customer); }}
-        getRowClassName={(customer) => rowKey(customer) === recentPipelineRow ? "bg-emerald-50/80 ring-1 ring-inset ring-emerald-200/80 dark:bg-emerald-500/10 dark:ring-emerald-400/20" : ""}
+        getRowClassName={(customer) =>
+          rowKey(customer) === recentPipelineRow
+            ? "!border-emerald-200 !bg-emerald-50/90 ring-1 ring-inset ring-emerald-200/80 hover:!bg-emerald-100/70 dark:!bg-emerald-500/10 dark:!border-emerald-400/20 dark:ring-emerald-400/20"
+            : ""
+        }
       />
       <CustomerDrawer
         customer={selected}

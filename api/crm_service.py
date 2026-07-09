@@ -408,7 +408,7 @@ def add_potential_customer(row: dict[str, Any], user: dict[str, Any]) -> tuple[b
         "Maturity": row.get("Maturity", ""),
         "Source_Type": row.get("Source_Type", row.get("Source_Channel", "Market Visit")),
         "Source_Channel": row.get("Source_Channel", row.get("Source_Type", "Market Visit")),
-        "Status": "Interested",
+        "Status": "Not interested / Need",
         "Potential_Level": lead_label(row.get("Potential_Level", "Hot")),
         "Next_Follow_Up": "",
         "Potential_Products": row.get("Potential_Product", row.get("Potential_Products", "SME Loan")),
@@ -446,7 +446,7 @@ def update_potential_customer(row_number: int, updates: dict[str, Any]) -> bool:
     if changes == ["Activities"]:
         activity_text = ""
     elif "Status" in changes:
-        activity_text = f"Status changed to {values.get('Status', 'Interested')}"
+        activity_text = f"Status changed to {values.get('Status', 'Not interested / Need')}"
     elif "Next_Follow_Up" in changes:
         activity_text = f"Follow up scheduled for {values.get('Next_Follow_Up', '')}"
     elif "Notes" in changes:
