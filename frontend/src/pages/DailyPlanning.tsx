@@ -68,9 +68,7 @@ export function DailyPlanning({ user, initialTasks }: { user: User; initialTasks
               <CalendarDays className="h-7 w-7" />
             </div>
             <div>
-              <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-bank dark:text-emerald-300">Commercial Banking CRM</p>
               <h2 className="page-title">Daily Planning</h2>
-              <p className="section-note">Plan customer coverage, market activity, and relationship manager execution.</p>
             </div>
           </div>
           <div className="hidden min-h-20 w-56 rounded-l-full bg-emerald-50/90 md:block dark:bg-emerald-500/10" />
