@@ -156,7 +156,7 @@ export function PotentialCustomers({
       <div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2 className="page-title">My Potential Customers</h2>
+            <h2 className="page-title">My Follow Up Customers</h2>
             <p className="section-note">List of customers you have marked as potential.</p>
           </div>
           <Button onClick={() => setAddOpen(true)} className="sm:w-auto">
