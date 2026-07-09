@@ -105,7 +105,7 @@ export function AppLayout({ user, active, children }: { user: User; active: stri
               </div>
               <div className="hidden sm:block">
                 <p className="text-sm font-extrabold text-slate-950 dark:text-white">{user.username}</p>
-                <p className="text-[11px] font-bold text-muted dark:text-slate-400">Relationship Manager</p>
+                <p className="text-xs font-bold text-slate-500 dark:text-slate-400">{user.staff_id}</p>
               </div>
               <ChevronDown className="hidden h-4 w-4 text-slate-500 sm:block" />
               </div>
@@ -142,8 +142,7 @@ function SidebarContent({
               <img src="/api/logo" className="h-full w-full object-contain" alt="Chip Mong Bank" />
             </div>
             <div>
-              <p className="text-sm font-extrabold tracking-wide">BankCRM Pro</p>
-              <p className="mt-1 text-[11px] font-bold text-emerald-100/80">Customer 360 Workspace</p>
+              <p className="text-sm font-extrabold tracking-wide">Chip Mong Bank</p>
             </div>
           </div>
         )}
@@ -161,7 +160,6 @@ function SidebarContent({
             </div>
             <div>
               <p className="text-xs font-extrabold uppercase tracking-wide text-emerald-100/70">Portfolio</p>
-              <p className="mt-1 text-sm font-extrabold">Retail & SME Banking</p>
             </div>
           </div>
         </div>

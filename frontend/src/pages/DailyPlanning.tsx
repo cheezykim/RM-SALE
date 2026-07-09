@@ -8,6 +8,8 @@ import { useSaveDailyPlan } from "../hooks/useCrmData";
 export function DailyPlanning({ user, initialTasks }: { user: User; initialTasks: DailyTask[] }) {
   const [planDate, setPlanDate] = useState(todayISO());
   const [tasks, setTasks] = useState<DailyTask[]>(initialTasks);
+  const [submittedTasks, setSubmittedTasks] = useState<DailyTask[]>([]);
+  const [submittedDate, setSubmittedDate] = useState("");
   const [message, setMessage] = useState("");
   const savePlan = useSaveDailyPlan();
 
@@ -25,6 +27,8 @@ export function DailyPlanning({ user, initialTasks }: { user: User; initialTasks
   async function submit() {
     const result = await savePlan.mutateAsync({ user, planDate, tasks });
     setMessage(result.message);
+    setSubmittedDate(planDate);
+    setSubmittedTasks(tasks.map((task) => ({ ...task, customers: task.customers.map((customer) => ({ ...customer })) })));
   }
 
   return (
@@ -68,6 +72,7 @@ export function DailyPlanning({ user, initialTasks }: { user: User; initialTasks
         <Button onClick={submit} disabled={savePlan.isPending}>{savePlan.isPending ? "Submitting..." : "Submit Daily Plan"}</Button>
       </div>
       {message && <p className="rounded-xl border border-bank/20 bg-bank-soft/80 px-4 py-3 text-sm font-bold text-bank-dark shadow-sm backdrop-blur dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200">{message}</p>}
+      {submittedTasks.length > 0 && <SubmittedPlanTable planDate={submittedDate} tasks={submittedTasks} />}
     </section>
   );
 
@@ -76,6 +81,58 @@ export function DailyPlanning({ user, initialTasks }: { user: User; initialTasks
     next[taskIndex].customers[customerIndex] = { ...next[taskIndex].customers[customerIndex], [field]: value };
     setTasks(next);
   }
+}
+
+function SubmittedPlanTable({ planDate, tasks }: { planDate: string; tasks: DailyTask[] }) {
+  return (
+    <section className="crm-card overflow-hidden">
+      <div className="border-b border-border/70 p-5 dark:border-white/10">
+        <h3 className="text-lg font-extrabold text-slate-950 dark:text-white">Submitted Plan</h3>
+        <p className="section-note mt-1">{planDate}</p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[860px] text-left text-sm">
+          <thead className="bg-bank text-xs uppercase text-white">
+            <tr>
+              <th className="px-4 py-3 font-bold">No.</th>
+              <th className="px-4 py-3 font-bold">Time</th>
+              <th className="px-4 py-3 font-bold">Activity</th>
+              <th className="px-4 py-3 font-bold">Location</th>
+              <th className="px-4 py-3 font-bold">Customers</th>
+              <th className="px-4 py-3 font-bold">Customer Details</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-white/10">
+            {tasks.map((task, index) => (
+              <tr key={`${task.start_time}-${task.end_time}-${index}`} className="bg-white/70 dark:bg-white/[0.03]">
+                <td className="px-4 py-3 font-bold text-slate-700 dark:text-slate-200">{index + 1}</td>
+                <td className="px-4 py-3 text-slate-700 dark:text-slate-200">
+                  {task.start_time || "-"} - {task.end_time || "-"}
+                </td>
+                <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">{task.activity || "-"}</td>
+                <td className="px-4 py-3 text-slate-700 dark:text-slate-200">{task.location || "-"}</td>
+                <td className="px-4 py-3 text-slate-700 dark:text-slate-200">{task.num_customers || "0"}</td>
+                <td className="px-4 py-3 text-slate-700 dark:text-slate-200">
+                  {task.customers.length ? (
+                    <div className="space-y-2">
+                      {task.customers.map((customer, customerIndex) => (
+                        <div key={`${customer.name}-${customerIndex}`} className="leading-5">
+                          <span className="font-semibold text-slate-900 dark:text-white">{customer.name || `Customer ${customerIndex + 1}`}</span>
+                          <span className="text-muted"> / {customer.contact || "No phone"} / {customer.biz || "No business"}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    "-"
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
 }
 
 function Field({ label, value, onChange, type = "text" }: { label: string; value: string; type?: string; onChange: (value: string) => void }) {
