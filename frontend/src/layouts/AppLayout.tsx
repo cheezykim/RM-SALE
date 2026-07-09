@@ -82,19 +82,12 @@ export function AppLayout({ user, active, children }: { user: User; active: stri
               <div>
                 <div className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-wide text-bank dark:text-emerald-300">
                   <ShieldCheck className="h-3.5 w-3.5" />
-                  Commercial Banking CRM
+                  <span>Commercial Banking CRM</span>
                 </div>
                 <h1 className="mt-1 text-lg font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-2xl">Customer Relationship Center</h1>
               </div>
             </div>
-            <div className="hidden min-w-0 flex-1 justify-center xl:flex">
-              <div className="relative w-full max-w-xl">
-                <Search className="absolute left-4 top-3 h-4 w-4 text-slate-400" />
-                <div className="h-10 rounded-full border border-white/70 bg-white/70 pl-11 pr-4 text-sm font-semibold leading-10 text-slate-400 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/5">
-                  Search customers, facilities, follow-ups
-                </div>
-              </div>
-            </div>
+            
             <div className="flex items-center gap-2 sm:gap-3">
               <Button variant="outline" className="h-10 w-10 p-0" onClick={() => setDarkMode((value) => !value)} title={darkMode ? "Light Mode" : "Dark Mode"} aria-label={darkMode ? "Light Mode" : "Dark Mode"}>
                 {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}

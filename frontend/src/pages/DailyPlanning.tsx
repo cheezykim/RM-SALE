@@ -1,39 +1,34 @@
-import { Building2, CalendarDays, ClipboardList, Landmark, MapPin, PhoneCall, Plus, Users } from "lucide-react";
+import { Building2, CalendarDays, CheckCircle2, ClipboardList, Clock3, Landmark, MapPin, PhoneCall, Plus, Send, Users } from "lucide-react";
 import { useState } from "react";
 import type { DailyTask, User } from "../types";
 import { todayISO } from "../lib/utils";
 import { Button } from "../components/ui/Button";
 import { useSaveDailyPlan } from "../hooks/useCrmData";
 
-const timelineStyles = [
+const activityStyles = [
   {
-    dot: "border-emerald-100 bg-emerald-500",
-    time: "border-emerald-100 bg-emerald-50 text-emerald-800 dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200",
-    icon: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200",
+    row: "border-emerald-100 bg-emerald-50/60 dark:border-emerald-400/10 dark:bg-emerald-500/5",
+    icon: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200",
     Icon: Users
   },
   {
-    dot: "border-sky-100 bg-sky-500",
-    time: "border-sky-100 bg-sky-50 text-sky-800 dark:border-sky-400/20 dark:bg-sky-500/10 dark:text-sky-200",
-    icon: "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-200",
+    row: "border-sky-100 bg-sky-50/60 dark:border-sky-400/10 dark:bg-sky-500/5",
+    icon: "bg-sky-100 text-sky-700 dark:bg-sky-500/10 dark:text-sky-200",
     Icon: Landmark
   },
   {
-    dot: "border-violet-100 bg-violet-500",
-    time: "border-violet-100 bg-violet-50 text-violet-800 dark:border-violet-400/20 dark:bg-violet-500/10 dark:text-violet-200",
-    icon: "bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-200",
+    row: "border-violet-100 bg-violet-50/60 dark:border-violet-400/10 dark:bg-violet-500/5",
+    icon: "bg-violet-100 text-violet-700 dark:bg-violet-500/10 dark:text-violet-200",
     Icon: MapPin
   },
   {
-    dot: "border-amber-100 bg-amber-500",
-    time: "border-amber-100 bg-amber-50 text-amber-800 dark:border-amber-400/20 dark:bg-amber-500/10 dark:text-amber-200",
-    icon: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-200",
+    row: "border-amber-100 bg-amber-50/60 dark:border-amber-400/10 dark:bg-amber-500/5",
+    icon: "bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-200",
     Icon: PhoneCall
   },
   {
-    dot: "border-teal-100 bg-teal-500",
-    time: "border-teal-100 bg-teal-50 text-teal-800 dark:border-teal-400/20 dark:bg-teal-500/10 dark:text-teal-200",
-    icon: "bg-teal-50 text-teal-700 dark:bg-teal-500/10 dark:text-teal-200",
+    row: "border-teal-100 bg-teal-50/60 dark:border-teal-400/10 dark:bg-teal-500/5",
+    icon: "bg-teal-100 text-teal-700 dark:bg-teal-500/10 dark:text-teal-200",
     Icon: ClipboardList
   }
 ];
@@ -83,52 +78,70 @@ export function DailyPlanning({ user, initialTasks }: { user: User; initialTasks
       </div>
 
       <div className="crm-card p-5">
-        <div className="max-w-xs">
-          <label className="label">Plan Date</label>
-          <div className="relative">
-            <CalendarDays className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input className="input-control pr-10" type="date" value={planDate} onChange={(event) => setPlanDate(event.target.value)} />
+        <div className="grid gap-4 lg:grid-cols-[minmax(220px,320px)_1fr] lg:items-end">
+          <div>
+            <label className="label">Plan Date</label>
+            <div className="relative">
+              <CalendarDays className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input className="input-control pr-10" type="date" value={planDate} onChange={(event) => setPlanDate(event.target.value)} />
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <WorkflowChip icon={CalendarDays} label="Select date" />
+            <WorkflowChip icon={Clock3} label="Plan activities" />
+            <WorkflowChip icon={CheckCircle2} label="Submit plan" />
           </div>
         </div>
       </div>
 
       <div className="crm-card overflow-hidden">
-        <div className="hidden grid-cols-[170px_72px_1fr_1fr_180px] gap-5 border-b border-border/70 px-5 py-4 text-xs font-extrabold uppercase text-slate-500 dark:border-white/10 dark:text-slate-400 lg:grid">
-          <span className="pl-14">Time</span>
-          <span />
-          <span>Activity</span>
-          <span>Location</span>
-          <span>Customers</span>
+        <div className="grid gap-2 border-b border-border/70 bg-slate-50/70 px-5 py-4 dark:border-white/10 dark:bg-white/[0.03] lg:grid-cols-[72px_210px_1fr_1fr_170px]">
+          <div className="hidden text-xs font-extrabold uppercase text-slate-500 dark:text-slate-400 lg:block">Type</div>
+          <div className="hidden items-center gap-2 text-xs font-extrabold uppercase text-slate-500 dark:text-slate-400 lg:flex">
+            <Clock3 className="h-4 w-4" />
+            Time
+          </div>
+          <div className="hidden items-center gap-2 text-xs font-extrabold uppercase text-slate-500 dark:text-slate-400 lg:flex">
+            <ClipboardList className="h-4 w-4" />
+            Activity
+          </div>
+          <div className="hidden items-center gap-2 text-xs font-extrabold uppercase text-slate-500 dark:text-slate-400 lg:flex">
+            <MapPin className="h-4 w-4" />
+            Location
+          </div>
+          <div className="hidden items-center gap-2 text-xs font-extrabold uppercase text-slate-500 dark:text-slate-400 lg:flex">
+            <Users className="h-4 w-4" />
+            Customers
+          </div>
+          <div className="flex items-center gap-2 text-sm font-extrabold text-slate-900 dark:text-white lg:hidden">
+            <ClipboardList className="h-5 w-5 text-bank dark:text-emerald-300" />
+            Activity Schedule
+          </div>
         </div>
-        <div className="divide-y divide-slate-100 dark:divide-white/10">
+        <div className="space-y-3 p-4">
           {tasks.map((task, index) => {
-            const style = timelineStyles[index % timelineStyles.length];
+            const style = activityStyles[index % activityStyles.length];
             const ActivityIcon = style.Icon;
 
             return (
-              <div key={index} className="grid gap-4 p-5 lg:grid-cols-[170px_72px_1fr_1fr_180px] lg:items-start lg:gap-5">
-                <div className="relative flex items-center gap-4 lg:min-h-24">
-                  <div className="relative flex w-8 justify-center self-stretch">
-                    <span className="absolute bottom-0 top-0 w-px bg-slate-200 dark:bg-white/10" />
-                    <span className={`relative mt-4 h-5 w-5 rounded-full border-4 shadow-sm ${style.dot}`} />
+              <div key={index} className={`rounded-2xl border p-4 shadow-sm ${style.row}`}>
+                <div className="grid gap-4 lg:grid-cols-[52px_210px_1fr_1fr_170px] lg:items-end">
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${style.icon}`}>
+                    <ActivityIcon className="h-6 w-6" />
                   </div>
-                  <div className={`grid w-28 gap-2 rounded-xl border p-3 text-center text-xs font-extrabold shadow-sm ${style.time}`}>
-                    <input className="w-full bg-transparent text-center outline-none" type="time" value={task.start_time} onChange={(event) => updateTask(index, { start_time: event.target.value })} />
-                    <span className="text-slate-400">to</span>
-                    <input className="w-full bg-transparent text-center outline-none" type="time" value={task.end_time} onChange={(event) => updateTask(index, { end_time: event.target.value })} />
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Start" value={task.start_time} type="time" onChange={(value) => updateTask(index, { start_time: value })} />
+                    <Field label="End" value={task.end_time} type="time" onChange={(value) => updateTask(index, { end_time: value })} />
                   </div>
-                </div>
 
-                <div className={`hidden h-12 w-12 items-center justify-center rounded-xl lg:flex ${style.icon}`}>
-                  <ActivityIcon className="h-6 w-6" />
+                  <Field label="Activity" value={task.activity} placeholder="e.g. Market Visit" onChange={(value) => updateTask(index, { activity: value })} />
+                  <Field label="Location" value={task.location} placeholder="e.g. Phnom Penh" onChange={(value) => updateTask(index, { location: value })} />
+                  <Field label="Customers" value={task.num_customers} placeholder="e.g. 5" onChange={(value) => syncCustomers(index, value)} />
                 </div>
-
-                <Field label="Activity" value={task.activity} placeholder="e.g. Market Visit" onChange={(value) => updateTask(index, { activity: value })} />
-                <Field label="Location" value={task.location} placeholder="e.g. Phnom Penh" onChange={(value) => updateTask(index, { location: value })} />
-                <Field label="Customers" value={task.num_customers} placeholder="e.g. 5" onChange={(value) => syncCustomers(index, value)} />
 
                 {task.customers.length > 0 && (
-                  <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-4 dark:border-white/10 dark:bg-white/[0.03] lg:col-start-3 lg:col-end-6">
+                  <div className="mt-4 rounded-xl border border-white/80 bg-white/80 p-4 dark:border-white/10 dark:bg-slate-950/40">
                     <div className="mb-3 flex items-center gap-2 text-xs font-extrabold uppercase text-slate-500 dark:text-slate-400">
                       <Building2 className="h-4 w-4" />
                       Customer Details
@@ -155,7 +168,10 @@ export function DailyPlanning({ user, initialTasks }: { user: User; initialTasks
           <Plus className="h-4 w-4" />
           Add Activity
         </Button>
-        <Button onClick={submit} disabled={savePlan.isPending}>{savePlan.isPending ? "Submitting..." : "Submit Daily Plan"}</Button>
+        <Button onClick={submit} disabled={savePlan.isPending}>
+          <Send className="h-4 w-4" />
+          {savePlan.isPending ? "Submitting..." : "Submit Daily Plan"}
+        </Button>
       </div>
       {message && <p className="rounded-xl border border-bank/20 bg-bank-soft/80 px-4 py-3 text-sm font-bold text-bank-dark shadow-sm backdrop-blur dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200">{message}</p>}
       {submittedTasks.length > 0 && <SubmittedPlanTable planDate={submittedDate} tasks={submittedTasks} />}
@@ -167,6 +183,15 @@ export function DailyPlanning({ user, initialTasks }: { user: User; initialTasks
     next[taskIndex].customers[customerIndex] = { ...next[taskIndex].customers[customerIndex], [field]: value };
     setTasks(next);
   }
+}
+
+function WorkflowChip({ icon: Icon, label }: { icon: typeof CalendarDays; label: string }) {
+  return (
+    <div className="flex h-11 items-center gap-3 rounded-xl border border-emerald-100 bg-emerald-50/70 px-3 text-sm font-bold text-bank-dark dark:border-emerald-400/10 dark:bg-emerald-500/10 dark:text-emerald-100">
+      <Icon className="h-4 w-4 shrink-0" />
+      <span>{label}</span>
+    </div>
+  );
 }
 
 function SubmittedPlanTable({ planDate, tasks }: { planDate: string; tasks: DailyTask[] }) {
