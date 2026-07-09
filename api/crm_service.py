@@ -91,7 +91,7 @@ NAV_ITEMS = [
     "MyMerchant",
     "Existing Customers",
     "Market Visit Customers",
-    "My Potential Customers",
+    "My Followup",
 ]
 
 
@@ -386,7 +386,7 @@ def add_potential_customer(row: dict[str, Any], user: dict[str, Any]) -> tuple[b
     potentials = load_potential_customers(user)
     key = crm_customer_key(row.get("Name", ""), row.get("Tel", ""), user.get("staff_id", ""))
     if not potentials.empty and key in potentials["Customer_Key"].astype(str).tolist():
-        return False, "This customer is already in My Potential Customers."
+        return False, "This customer is already in My Followup."
 
     now_text = now_cambodia().strftime("%Y-%m-%d %H:%M:%S")
     record = {
@@ -427,7 +427,7 @@ def add_potential_customer(row: dict[str, Any], user: dict[str, Any]) -> tuple[b
         new_customer_worksheet.append_row([record.get(col, "") for col in new_customer_headers])
         return True, "Customer successfully added and safely stored in New_customer."
 
-    return True, "Customer successfully added to My Potential Customers."
+    return True, "Customer successfully added to My Followup."
 
 
 def update_potential_customer(row_number: int, updates: dict[str, Any]) -> bool:

@@ -15,6 +15,7 @@ type PipelineUpdate = {
   Last_Updated: string;
 };
 const pipelineStatuses = ["Not interested / Need", "Open to more information", "Interested-need appointment", "Study initiated"];
+const sourceOptions = ["All", "Market", "Eco-list"];
 
 export function PotentialCustomers({
   user,
@@ -27,6 +28,7 @@ export function PotentialCustomers({
 }) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("All");
+  const [source, setSource] = useState("All");
   const [level, setLevel] = useState("All");
   const [dateFilter, setDateFilter] = useState("All");
   const [selected, setSelected] = useState<PotentialCustomer | null>(null);
@@ -51,6 +53,7 @@ export function PotentialCustomers({
     sevenDaysAgo.setDate(today.getDate() - 7);
     return displayedPotentials.filter((row) => {
       if (status !== "All" && row.Status !== status) return false;
+      if (source !== "All" && normalizeSource(row) !== source) return false;
       if (level !== "All" && normalizeLeadLevel(row.Potential_Level) !== level) return false;
       const added = row.Date_Added ? new Date(row.Date_Added) : null;
       if (dateFilter === "Today" && row.Date_Added !== today.toISOString().slice(0, 10)) return false;
@@ -59,7 +62,7 @@ export function PotentialCustomers({
       if (query) return Object.values(row).join(" ").toLowerCase().includes(query.toLowerCase());
       return true;
     }).sort((a, b) => latestUpdateTime(b) - latestUpdateTime(a));
-  }, [displayedPotentials, query, status, level, dateFilter]);
+  }, [displayedPotentials, query, status, source, level, dateFilter]);
 
   const columns: ColumnDef<PotentialCustomer>[] = [
     {
@@ -156,8 +159,8 @@ export function PotentialCustomers({
       <div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2 className="page-title">My Follow Up Customers</h2>
-            <p className="section-note">List of customers you have marked as potential.</p>
+            <h2 className="page-title">My Followup</h2>
+            <p className="section-note">List of customers you are following up by pipeline status and source.</p>
           </div>
           <Button onClick={() => setAddOpen(true)} className="sm:w-auto">
             <Plus className="h-4 w-4" />
@@ -172,7 +175,7 @@ export function PotentialCustomers({
         </div>
       )}
       <div className="crm-card p-4">
-        <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr_1fr_1fr_auto]">
+        <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr_1fr_1fr_1fr_auto]">
           <div>
             <label className="label">Search</label>
             <div className="relative">
@@ -181,6 +184,7 @@ export function PotentialCustomers({
             </div>
           </div>
           <Select label="Status" value={status} options={["All", ...pipelineStatuses]} onChange={setStatus} />
+          <Select label="Source" value={source} options={sourceOptions} onChange={setSource} />
           <Select label="Signal" value={level} options={["All", "H", "M", "L"]} onChange={setLevel} />
           <Select label="Date Added" value={dateFilter} options={["All", "Today", "Last 7 Days", "This Month"]} onChange={setDateFilter} />
           <div className="flex items-end">
@@ -191,7 +195,7 @@ export function PotentialCustomers({
           </div>
         </div>
       </div>
-      <div className="rounded-xl border border-bank/20 bg-bank-soft/80 px-4 py-3 text-sm font-bold text-bank-dark shadow-sm backdrop-blur dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200">Showing {filtered.length.toLocaleString()} potential customers</div>
+      <div className="rounded-xl border border-bank/20 bg-bank-soft/80 px-4 py-3 text-sm font-bold text-bank-dark shadow-sm backdrop-blur dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200">Showing {filtered.length.toLocaleString()} follow-up customers</div>
       <DataTable
         data={filtered}
         columns={columns}
@@ -417,6 +421,13 @@ function latestUpdateTime(customer: PotentialCustomer) {
   const normalized = timestamp.includes("T") ? timestamp : timestamp.replace(" ", "T");
   const time = new Date(normalized).getTime();
   return Number.isFinite(time) ? time : 0;
+}
+
+function normalizeSource(customer: PotentialCustomer) {
+  const source = safeText(customer.Source_Type, customer.Source_Channel).toLowerCase();
+  if (source.includes("eco")) return "Eco-list";
+  if (source.includes("market")) return "Market";
+  return source ? source : "Market";
 }
 
 function exportCsv(rows: PotentialCustomer[], filename: string) {

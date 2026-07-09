@@ -43,7 +43,7 @@ function AuthenticatedRoutes() {
       <Route
         path="/potential-customers"
         element={
-          <AppLayout user={user} active="My Potential Customers">
+          <AppLayout user={user} active="My Followup">
             {errorBlock}
             {isLoading || !data ? (
               loading

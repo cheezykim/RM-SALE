@@ -29,7 +29,7 @@ const icons: Record<string, ElementType> = {
   "MyMerchant": Store,
   "Existing Customers": Users,
   "Market Visit Customers": Users,
-  "My Potential Customers": UserRoundCheck
+  "My Followup": UserRoundCheck
 };
 
 const paths: Record<string, string> = {
@@ -37,7 +37,7 @@ const paths: Record<string, string> = {
   "MyMerchant": "/my-merchant",
   "Existing Customers": "/existing-customers",
   "Market Visit Customers": "/market-visit-customers",
-  "My Potential Customers": "/potential-customers"
+  "My Followup": "/potential-customers"
 };
 
 export function AppLayout({ user, active, children }: { user: User; active: string; children: ReactNode }) {
