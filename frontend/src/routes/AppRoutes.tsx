@@ -4,7 +4,9 @@ import { useBootstrap, useUpdatePotential } from "../hooks/useCrmData";
 import { useSessionStore } from "../store/sessionStore";
 import { Login } from "../components/Login";
 import { DailyPlanning } from "../pages/DailyPlanning";
+import { ExistingCustomers } from "../pages/ExistingCustomers";
 import { MarketVisit } from "../pages/MarketVisit";
+import { MyMerchant } from "../pages/MyMerchant";
 import { PotentialCustomers } from "../pages/PotentialCustomers";
 
 export function AppRoutes() {
@@ -35,6 +37,8 @@ function AuthenticatedRoutes() {
       <Route path="/login" element={<Navigate to="/daily-planning" replace />} />
       <Route path="/" element={<Navigate to="/daily-planning" replace />} />
       <Route path="/daily-planning" element={<AppLayout user={user} active="Daily Planning">{errorBlock}{isLoading || !data ? loading : <DailyPlanning user={user} initialTasks={data.dailyTasks} />}</AppLayout>} />
+      <Route path="/my-merchant" element={<AppLayout user={user} active="MyMerchant">{errorBlock}{isLoading || !data ? loading : <MyMerchant visits={data.visits} />}</AppLayout>} />
+      <Route path="/existing-customers" element={<AppLayout user={user} active="Existing Customers">{errorBlock}{isLoading || !data ? loading : <ExistingCustomers customers={data.potentials} />}</AppLayout>} />
       <Route path="/market-visit-customers" element={<AppLayout user={user} active="Market Visit Customers">{errorBlock}{isLoading || !data ? loading : <MarketVisit user={user} visits={data.visits} />}</AppLayout>} />
       <Route
         path="/potential-customers"

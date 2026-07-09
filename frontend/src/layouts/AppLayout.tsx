@@ -9,6 +9,7 @@ import {
   Moon,
   Search,
   ShieldCheck,
+  Store,
   Sun,
   UserRound,
   UserRoundCheck,
@@ -25,12 +26,16 @@ import { Button } from "../components/ui/Button";
 
 const icons: Record<string, ElementType> = {
   "Daily Planning": CalendarDays,
+  "MyMerchant": Store,
+  "Existing Customers": Users,
   "Market Visit Customers": Users,
   "My Potential Customers": UserRoundCheck
 };
 
 const paths: Record<string, string> = {
   "Daily Planning": "/daily-planning",
+  "MyMerchant": "/my-merchant",
+  "Existing Customers": "/existing-customers",
   "Market Visit Customers": "/market-visit-customers",
   "My Potential Customers": "/potential-customers"
 };

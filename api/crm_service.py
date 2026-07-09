@@ -88,6 +88,8 @@ CRM_COLUMNS = [
 
 NAV_ITEMS = [
     "Daily Planning",
+    "MyMerchant",
+    "Existing Customers",
     "Market Visit Customers",
     "My Potential Customers",
 ]
