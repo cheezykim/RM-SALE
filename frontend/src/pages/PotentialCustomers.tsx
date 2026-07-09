@@ -10,6 +10,10 @@ import type { PotentialCustomer, User, VisitCustomer } from "../types";
 
 const exportColumns = ["Name", "Tel", "Business", "Purpose", "Bank", "Amount", "Interest", "Loan_Type", "Tenure", "Maturity", "Status", "Potential_Level", "Potential_Products", "Next_Follow_Up", "Date_Added", "Source_Type", "Source_Channel", "Remark", "Notes"];
 type DetailTab = "Overview" | "Remark" | "Notes" | "Activities";
+type PipelineUpdate = {
+  Status?: string;
+  Last_Updated: string;
+};
 
 export function PotentialCustomers({
   user,
@@ -28,13 +32,23 @@ export function PotentialCustomers({
   const [detailTab, setDetailTab] = useState<DetailTab>("Overview");
   const [addOpen, setAddOpen] = useState(false);
   const [message, setMessage] = useState("");
+  const [pipelineUpdates, setPipelineUpdates] = useState<Record<string, PipelineUpdate>>({});
+  const [recentPipelineRow, setRecentPipelineRow] = useState("");
   const addPotential = useAddPotential(user);
+
+  const displayedPotentials = useMemo(() => {
+    return potentials.map((row) => {
+      const key = rowKey(row);
+      const update = pipelineUpdates[key];
+      return update ? { ...row, ...update } : row;
+    });
+  }, [potentials, pipelineUpdates]);
 
   const filtered = useMemo(() => {
     const today = new Date();
     const sevenDaysAgo = new Date(today);
     sevenDaysAgo.setDate(today.getDate() - 7);
-    return potentials.filter((row) => {
+    return displayedPotentials.filter((row) => {
       if (status !== "All" && row.Status !== status) return false;
       if (level !== "All" && normalizeLeadLevel(row.Potential_Level) !== level) return false;
       const added = row.Date_Added ? new Date(row.Date_Added) : null;
@@ -43,8 +57,8 @@ export function PotentialCustomers({
       if (dateFilter === "This Month" && (!added || added.getMonth() !== today.getMonth() || added.getFullYear() !== today.getFullYear())) return false;
       if (query) return Object.values(row).join(" ").toLowerCase().includes(query.toLowerCase());
       return true;
-    });
-  }, [potentials, query, status, level, dateFilter]);
+    }).sort((a, b) => latestUpdateTime(b) - latestUpdateTime(a));
+  }, [displayedPotentials, query, status, level, dateFilter]);
 
   const columns: ColumnDef<PotentialCustomer>[] = [
     {
@@ -86,8 +100,9 @@ export function PotentialCustomers({
       accessorKey: "Status",
       header: "Pipeline",
       cell: ({ row }) => (
-        <div className="min-w-[150px] space-y-2">
+        <div className={`min-w-[150px] space-y-2 rounded-xl px-3 py-2 transition ${rowKey(row.original) === recentPipelineRow ? "bg-emerald-100/70 ring-1 ring-emerald-200 dark:bg-emerald-500/10 dark:ring-emerald-400/20" : ""}`}>
           <StatusBadge status={row.original.Status} />
+          <div className="text-xs font-semibold text-muted">Updated {formatDate(row.original.Last_Updated, "-")}</div>
         </div>
       )
     },
@@ -164,7 +179,7 @@ export function PotentialCustomers({
               <input className="input-control pl-9" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search customer..." />
             </div>
           </div>
-          <Select label="Status" value={status} options={["All", ...Array.from(new Set(potentials.map((row) => row.Status).filter(Boolean)))]} onChange={setStatus} />
+          <Select label="Status" value={status} options={["All", ...Array.from(new Set(displayedPotentials.map((row) => row.Status).filter(Boolean)))]} onChange={setStatus} />
           <Select label="Signal" value={level} options={["All", "H", "M", "L"]} onChange={setLevel} />
           <Select label="Date Added" value={dateFilter} options={["All", "Today", "Last 7 Days", "This Month"]} onChange={setDateFilter} />
           <div className="flex items-end">
@@ -176,14 +191,28 @@ export function PotentialCustomers({
         </div>
       </div>
       <div className="rounded-xl border border-bank/20 bg-bank-soft/80 px-4 py-3 text-sm font-bold text-bank-dark shadow-sm backdrop-blur dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200">Showing {filtered.length.toLocaleString()} potential customers</div>
-      <DataTable data={filtered} columns={columns} search={query} onRowClick={(customer) => { setDetailTab("Overview"); setSelected(customer); }} />
+      <DataTable
+        data={filtered}
+        columns={columns}
+        search={query}
+        onRowClick={(customer) => { setDetailTab("Overview"); setSelected(customer); }}
+        getRowClassName={(customer) => rowKey(customer) === recentPipelineRow ? "bg-emerald-50/80 ring-1 ring-inset ring-emerald-200/80 dark:bg-emerald-500/10 dark:ring-emerald-400/20" : ""}
+      />
       <CustomerDrawer
         customer={selected}
         initialTab={detailTab}
         onClose={() => setSelected(null)}
         onSave={async (updates) => {
           if (!selected) return;
+          const statusChanged = typeof updates.Status === "string" && updates.Status !== selected.Status;
           await onSave(selected, updates);
+          if (statusChanged) {
+            const key = rowKey(selected);
+            const lastUpdated = new Date().toISOString();
+            setPipelineUpdates((current) => ({ ...current, [key]: { Status: updates.Status as string, Last_Updated: lastUpdated } }));
+            setRecentPipelineRow(key);
+            setMessage(`${safeText(selected.Name, "Customer")} pipeline updated to ${updates.Status}.`);
+          }
           setSelected(null);
         }}
       />
@@ -371,6 +400,18 @@ function safeText(value: unknown, fallback = "") {
 function formatDate(value: unknown, fallback: string) {
   const text = safeText(value);
   return text ? text.slice(0, 10) : fallback;
+}
+
+function rowKey(customer: PotentialCustomer) {
+  return String(customer._row_number || customer.Customer_Key || `${customer.Name}-${customer.Tel}`);
+}
+
+function latestUpdateTime(customer: PotentialCustomer) {
+  const timestamp = safeText(customer.Last_Updated, customer.Date_Added);
+  if (!timestamp) return 0;
+  const normalized = timestamp.includes("T") ? timestamp : timestamp.replace(" ", "T");
+  const time = new Date(normalized).getTime();
+  return Number.isFinite(time) ? time : 0;
 }
 
 function exportCsv(rows: PotentialCustomer[], filename: string) {

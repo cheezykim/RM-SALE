@@ -15,9 +15,10 @@ type DataTableProps<T> = {
   search?: string;
   pageSize?: number;
   onRowClick?: (row: T) => void;
+  getRowClassName?: (row: T) => string;
 };
 
-export function DataTable<T>({ data, columns, search = "", pageSize = 30, onRowClick }: DataTableProps<T>) {
+export function DataTable<T>({ data, columns, search = "", pageSize = 30, onRowClick, getRowClassName }: DataTableProps<T>) {
   const table = useReactTable({
     data,
     columns,
@@ -48,7 +49,7 @@ export function DataTable<T>({ data, columns, search = "", pageSize = 30, onRowC
               table.getRowModel().rows.map((row, index) => (
                 <tr
                   key={row.id}
-                  className={`border-b border-slate-100/80 bg-white/60 transition hover:bg-bank-mist/80 dark:border-white/5 dark:bg-transparent dark:hover:bg-white/5 ${onRowClick ? "cursor-pointer" : ""}`}
+                  className={`border-b border-slate-100/80 bg-white/60 transition hover:bg-bank-mist/80 dark:border-white/5 dark:bg-transparent dark:hover:bg-white/5 ${onRowClick ? "cursor-pointer" : ""} ${getRowClassName?.(row.original) ?? ""}`}
                   onClick={() => onRowClick?.(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
