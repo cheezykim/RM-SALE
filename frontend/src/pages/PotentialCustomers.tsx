@@ -1,6 +1,22 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { Bell, Download, Eye, Plus, Search, Sparkles, X } from "lucide-react";
+import {
+  Bell,
+  CalendarCheck,
+  Clock3,
+  Download,
+  Eye,
+  FileText,
+  PhoneCall,
+  Plus,
+  Search,
+  Sparkles,
+  Target,
+  TrendingUp,
+  UserPlus,
+  X
+} from "lucide-react";
 import { useMemo, useState } from "react";
+import salespersonFollowup from "../assets/salesperson-followup.svg";
 import { DataTable } from "../components/DataTable";
 import { CustomerDrawer } from "../components/CustomerDrawer";
 import { LeadBadge, normalizeLeadLevel, StatusBadge } from "../components/ui/Badge";
@@ -63,6 +79,50 @@ export function PotentialCustomers({
       return true;
     }).sort((a, b) => latestUpdateTime(b) - latestUpdateTime(a));
   }, [displayedPotentials, query, status, source, level, dateFilter]);
+
+  const followupInsights = useMemo(() => {
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const dueToday = displayedPotentials.filter((row) => safeText(row.Next_Follow_Up).slice(0, 10) === todayKey).length;
+    const highPotential = displayedPotentials.filter((row) => normalizeLeadLevel(row.Potential_Level) === "H").length;
+    const appointmentReady = displayedPotentials.filter((row) => row.Status === "Interested-need appointment").length;
+    const studyInitiated = displayedPotentials.filter((row) => row.Status === "Study initiated").length;
+    return { dueToday, highPotential, appointmentReady, studyInitiated };
+  }, [displayedPotentials]);
+
+  const quickActions = [
+    {
+      label: "Call Today",
+      detail: `${followupInsights.dueToday.toLocaleString()} due`,
+      icon: PhoneCall,
+      active: dateFilter === "Today",
+      onClick: () => setDateFilter("Today"),
+      tone: "emerald"
+    },
+    {
+      label: "Book Appointment",
+      detail: `${followupInsights.appointmentReady.toLocaleString()} ready`,
+      icon: CalendarCheck,
+      active: status === "Interested-need appointment",
+      onClick: () => setStatus("Interested-need appointment"),
+      tone: "blue"
+    },
+    {
+      label: "Prepare Study",
+      detail: `${followupInsights.studyInitiated.toLocaleString()} active`,
+      icon: FileText,
+      active: status === "Study initiated",
+      onClick: () => setStatus("Study initiated"),
+      tone: "amber"
+    },
+    {
+      label: "Add Lead",
+      detail: "New customer",
+      icon: UserPlus,
+      active: false,
+      onClick: () => setAddOpen(true),
+      tone: "slate"
+    }
+  ];
 
   const columns: ColumnDef<PotentialCustomer>[] = [
     {
@@ -156,16 +216,70 @@ export function PotentialCustomers({
 
   return (
     <section className="space-y-5">
-      <div>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h2 className="page-title">My Followup</h2>
-            <p className="section-note">List of customers you are following up by pipeline status and source.</p>
+      <div className="overflow-hidden rounded-xl border border-white/70 bg-white/80 shadow-glass backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70">
+        <div className="grid gap-0 lg:grid-cols-[minmax(0,1.35fr)_minmax(300px,0.65fr)]">
+          <div className="p-5 sm:p-6 lg:p-7">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-lg border border-bank/15 bg-bank-soft px-3 py-1 text-[11px] font-extrabold uppercase tracking-wide text-bank-dark dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200">
+                  <Target className="h-3.5 w-3.5" />
+                  Sales follow-up cockpit
+                </div>
+                <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white">My Followup</h2>
+                <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-muted dark:text-slate-400">
+                  See who to call, which customers need appointments, and where each opportunity sits in the pipeline.
+                </p>
+              </div>
+              <Button onClick={() => setAddOpen(true)} className="sm:w-auto">
+                <Plus className="h-4 w-4" />
+                Add Customer
+              </Button>
+            </div>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <InsightTile icon={Clock3} label="Due Today" value={followupInsights.dueToday} tone="emerald" />
+              <InsightTile icon={TrendingUp} label="High Signal" value={followupInsights.highPotential} tone="red" />
+              <InsightTile icon={CalendarCheck} label="Appointments" value={followupInsights.appointmentReady} tone="blue" />
+              <InsightTile icon={FileText} label="Study Initiated" value={followupInsights.studyInitiated} tone="amber" />
+            </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {quickActions.map((action) => (
+                <button
+                  key={action.label}
+                  type="button"
+                  onClick={action.onClick}
+                  className={`group flex h-20 items-center gap-3 rounded-lg border px-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-lift ${
+                    action.active
+                      ? "border-bank/40 bg-bank-soft text-bank-dark dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-100"
+                      : "border-slate-200/80 bg-white/75 text-slate-800 hover:border-bank/25 hover:bg-white dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
+                  }`}
+                >
+                  <span className={quickActionIconClass(action.tone)}>
+                    <action.icon className="h-4 w-4" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-extrabold">{action.label}</span>
+                    <span className="mt-1 block truncate text-xs font-semibold text-muted dark:text-slate-400">{action.detail}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
-          <Button onClick={() => setAddOpen(true)} className="sm:w-auto">
-            <Plus className="h-4 w-4" />
-            Add Customer
-          </Button>
+          <div className="relative hidden min-h-[320px] items-end justify-center overflow-hidden border-l border-slate-100 bg-gradient-to-br from-sky-50 via-white to-emerald-50 p-6 dark:border-white/10 dark:from-slate-950 dark:via-slate-900 dark:to-emerald-950/60 lg:flex">
+            <img src={salespersonFollowup} alt="Salesperson reviewing customer follow ups" className="h-full max-h-[310px] w-full object-contain drop-shadow-xl" />
+            <div className="absolute bottom-6 left-6 right-6 rounded-lg border border-white/80 bg-white/85 px-4 py-3 shadow-sm backdrop-blur dark:border-white/10 dark:bg-slate-950/75">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-bank text-white">
+                  <PhoneCall className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-extrabold text-slate-950 dark:text-white">Next best action</p>
+                  <p className="mt-0.5 text-xs font-semibold text-muted dark:text-slate-400">Prioritize calls and appointments from one screen.</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       {message && (
@@ -195,7 +309,23 @@ export function PotentialCustomers({
           </div>
         </div>
       </div>
-      <div className="rounded-xl border border-bank/20 bg-bank-soft/80 px-4 py-3 text-sm font-bold text-bank-dark shadow-sm backdrop-blur dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200">Showing {filtered.length.toLocaleString()} follow-up customers</div>
+      <div className="flex flex-col gap-3 rounded-xl border border-bank/20 bg-bank-soft/80 px-4 py-3 text-sm font-bold text-bank-dark shadow-sm backdrop-blur dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200 sm:flex-row sm:items-center sm:justify-between">
+        <span>Showing {filtered.length.toLocaleString()} follow-up customers</span>
+        <button
+          type="button"
+          onClick={() => {
+            setStatus("All");
+            setSource("All");
+            setLevel("All");
+            setDateFilter("All");
+            setQuery("");
+          }}
+          className="inline-flex items-center gap-2 self-start rounded-md bg-white/80 px-3 py-1.5 text-xs font-extrabold text-bank-dark shadow-sm transition hover:bg-white dark:bg-white/10 dark:text-emerald-100 sm:self-auto"
+        >
+          <X className="h-3.5 w-3.5" />
+          Clear filters
+        </button>
+      </div>
       <DataTable
         data={filtered}
         columns={columns}
@@ -237,6 +367,49 @@ export function PotentialCustomers({
       />
     </section>
   );
+}
+
+function InsightTile({
+  icon: Icon,
+  label,
+  value,
+  tone
+}: {
+  icon: typeof Clock3;
+  label: string;
+  value: number;
+  tone: "emerald" | "red" | "blue" | "amber";
+}) {
+  const toneClass = {
+    emerald: "bg-emerald-50 text-emerald-700 ring-emerald-200/80 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-400/20",
+    red: "bg-red-50 text-red-700 ring-red-200/80 dark:bg-red-500/10 dark:text-red-200 dark:ring-red-400/20",
+    blue: "bg-blue-50 text-blue-700 ring-blue-200/80 dark:bg-blue-500/10 dark:text-blue-200 dark:ring-blue-400/20",
+    amber: "bg-amber-50 text-amber-700 ring-amber-200/80 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-400/20"
+  }[tone];
+
+  return (
+    <div className="rounded-lg border border-slate-200/80 bg-white/70 px-4 py-3 shadow-sm dark:border-white/10 dark:bg-white/5">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-extrabold uppercase tracking-wide text-muted dark:text-slate-400">{label}</p>
+          <p className="mt-1 text-2xl font-extrabold text-slate-950 dark:text-white">{value.toLocaleString()}</p>
+        </div>
+        <div className={`flex h-10 w-10 items-center justify-center rounded-lg ring-1 ${toneClass}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function quickActionIconClass(tone: string) {
+  const tones: Record<string, string> = {
+    emerald: "bg-emerald-50 text-emerald-700 ring-emerald-200/80 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-400/20",
+    blue: "bg-blue-50 text-blue-700 ring-blue-200/80 dark:bg-blue-500/10 dark:text-blue-200 dark:ring-blue-400/20",
+    amber: "bg-amber-50 text-amber-700 ring-amber-200/80 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-400/20",
+    slate: "bg-slate-100 text-slate-700 ring-slate-200/80 dark:bg-white/10 dark:text-slate-200 dark:ring-white/10"
+  };
+  return `flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ring-1 ${tones[tone] ?? tones.slate}`;
 }
 
 const initialManualCustomer: VisitCustomer = {
