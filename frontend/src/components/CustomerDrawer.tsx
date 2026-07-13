@@ -1,12 +1,11 @@
 import { Building2, CalendarClock, FileText, Landmark, Save, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { PotentialCustomer } from "../types";
 import { Button } from "./ui/Button";
 import { LeadBadge, normalizeLeadLevel, StatusBadge } from "./ui/Badge";
 
 const statuses = ["Not interested / Need", "Open to more information", "Interested-need appointment", "Study initiated"];
 const levels = ["H", "M", "L"];
-const products = ["SME Loan", "Housing Loan", "Auto Loan", "Working Capital Loan", "Other Products"];
 const tabs = ["Overview", "Remark", "Notes", "Activities"] as const;
 
 type DrawerTab = (typeof tabs)[number];
@@ -53,11 +52,6 @@ export function CustomerDrawer({
     setForm(buildForm(customer));
   }, [customer, initialTab]);
 
-  const selectedProducts = useMemo(
-    () => form.Potential_Products.split(",").map((value) => value.trim()).filter(Boolean),
-    [form.Potential_Products]
-  );
-
   if (!customer) return null;
 
   async function save() {
@@ -71,13 +65,6 @@ export function CustomerDrawer({
 
   function update(key: keyof CustomerForm, value: string) {
     setForm((current) => ({ ...current, [key]: value }));
-  }
-
-  function toggleProduct(product: string) {
-    const next = selectedProducts.includes(product)
-      ? selectedProducts.filter((item) => item !== product)
-      : [...selectedProducts, product];
-    update("Potential_Products", next.join(", "));
   }
 
   const source = safeText(form.Source_Type, form.Source_Channel || customer.Sender_Name || "Market Visit");
@@ -151,20 +138,6 @@ export function CustomerDrawer({
                 <SelectField label="Potential Level" value={form.Potential_Level} options={levels} onChange={(value) => update("Potential_Level", value)} />
                 <TextField label="Next Follow Up" value={form.Next_Follow_Up} type="date" onChange={(value) => update("Next_Follow_Up", value)} />
               </EditableSection>
-              <div className="crm-card bg-white/90 p-4">
-                <h3 className="mb-3 text-sm font-extrabold text-slate-950">Potential Products</h3>
-                <div className="flex flex-wrap gap-2">
-                  {products.map((product) => (
-                    <button
-                      key={product}
-                      onClick={() => toggleProduct(product)}
-                      className={`rounded-md px-3 py-1.5 text-xs font-bold transition ${selectedProducts.includes(product) ? "bg-bank text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
-                    >
-                      {product}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
           )}
 
