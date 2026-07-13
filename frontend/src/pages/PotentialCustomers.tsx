@@ -5,6 +5,7 @@ import {
   Clock3,
   Download,
   FileText,
+  Phone,
   PhoneCall,
   Plus,
   Search,
@@ -16,7 +17,6 @@ import {
   X
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import salespersonFollowup from "../assets/salesperson-followup.svg";
 import { DataTable } from "../components/DataTable";
 import { CustomerDrawer } from "../components/CustomerDrawer";
@@ -55,7 +55,6 @@ export function PotentialCustomers({
   const [pipelineUpdates, setPipelineUpdates] = useState<Record<string, PipelineUpdate>>({});
   const [recentPipelineRow, setRecentPipelineRow] = useState("");
   const addPotential = useAddPotential(user);
-  const navigate = useNavigate();
 
   const displayedPotentials = useMemo(() => {
     return potentials.map((row) => {
@@ -132,10 +131,21 @@ export function PotentialCustomers({
       header: "Customer",
       cell: ({ row }) => (
         <div className="min-w-[210px]">
-          <div className="font-extrabold text-slate-950">{safeText(row.original.Name, "Unnamed customer")}</div>
-          <div className="mt-1 text-xs font-medium text-muted">Phone Number: {safeText(row.original.Tel, "No phone")}</div>
-          <div className="mt-2 inline-flex rounded-md bg-bank-soft px-2 py-1 text-[11px] font-bold text-bank-dark">
-            Source: {safeText(row.original.Source_Type, row.original.Source_Channel || row.original.Sender_Name || "Market Visit")}
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-bank dark:bg-emerald-500/10 dark:text-emerald-200">
+              <UserRoundCheck className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="font-extrabold text-slate-950 dark:text-white">{safeText(row.original.Name, "Unnamed customer")}</div>
+              <div className="mt-1 flex items-center gap-1.5 text-xs font-medium text-muted">
+                <Phone className="h-3.5 w-3.5" />
+                {safeText(row.original.Tel, "No phone")}
+              </div>
+              <div className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-bank-soft px-2 py-1 text-[11px] font-bold text-bank-dark dark:bg-emerald-500/10 dark:text-emerald-200">
+                <UserRoundCheck className="h-3.5 w-3.5" />
+                Sale: {safeText(row.original.Sender_Name, user.username)}
+              </div>
+            </div>
           </div>
         </div>
       )
@@ -214,16 +224,10 @@ export function PotentialCustomers({
                   See who to call, which customers need appointments, and where each opportunity sits in the pipeline.
                 </p>
               </div>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Button variant="outline" onClick={() => navigate("/daily-planning")} className="sm:w-auto">
-                  <UserRoundCheck className="h-4 w-4" />
-                  My Daily Work
-                </Button>
-                <Button onClick={() => setAddOpen(true)} className="sm:w-auto">
-                  <Plus className="h-4 w-4" />
-                  Add Customer
-                </Button>
-              </div>
+              <Button onClick={() => setAddOpen(true)} className="sm:w-auto">
+                <Plus className="h-4 w-4" />
+                Add Customer
+              </Button>
             </div>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
