@@ -37,7 +37,7 @@ export function DataTable<T>({ data, columns, search = "", pageSize = 30, onRowC
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <th key={header.id} className="border-b border-border px-5 py-4 text-left text-[11px] font-extrabold uppercase tracking-wide text-slate-500 dark:border-white/10 dark:text-slate-400">
+                  <th key={header.id} className="border-b border-border px-5 py-4 text-left text-[11px] font-extrabold uppercase tracking-wide text-slate-950 dark:border-white/10 dark:text-slate-100">
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </th>
                 ))}
