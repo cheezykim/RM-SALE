@@ -24,7 +24,7 @@ export function normalizeLeadLevel(level?: string) {
   return "H";
 }
 
-export function StatusBadge({ status }: { status?: string }) {
+export function StatusBadge({ status, outlined = true }: { status?: string; outlined?: boolean }) {
   const value = status || "Not interested / Need";
   const normalized = value.toLowerCase();
   const color =
@@ -35,5 +35,5 @@ export function StatusBadge({ status }: { status?: string }) {
         : normalized === "interested-need appointment"
           ? "border-blue-200/80 bg-blue-50/90 text-blue-800 dark:border-blue-400/20 dark:bg-blue-500/10 dark:text-blue-200"
           : "border-amber-200/80 bg-amber-50/90 text-amber-800 dark:border-amber-400/20 dark:bg-amber-500/10 dark:text-amber-200";
-  return <span className={cn("inline-flex rounded-lg border px-2.5 py-1 text-xs font-bold shadow-sm", color)}>{value}</span>;
+  return <span className={cn("inline-flex rounded-lg px-2.5 py-1 text-xs font-bold", outlined && "border shadow-sm", color)}>{value}</span>;
 }

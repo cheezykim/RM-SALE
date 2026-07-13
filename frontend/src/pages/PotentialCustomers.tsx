@@ -177,7 +177,7 @@ export function PotentialCustomers({
       header: "Pipeline",
       cell: ({ row }) => (
         <div className="min-w-[150px] space-y-2">
-          <StatusBadge status={row.original.Status} />
+          <StatusBadge status={row.original.Status} outlined={false} />
           <div className="text-xs font-semibold text-muted">Updated {formatDate(row.original.Last_Updated, "-")}</div>
         </div>
       )
