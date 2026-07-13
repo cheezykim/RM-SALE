@@ -12,9 +12,11 @@ import {
   Target,
   TrendingUp,
   UserPlus,
+  UserRoundCheck,
   X
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import salespersonFollowup from "../assets/salesperson-followup.svg";
 import { DataTable } from "../components/DataTable";
 import { CustomerDrawer } from "../components/CustomerDrawer";
@@ -53,6 +55,7 @@ export function PotentialCustomers({
   const [pipelineUpdates, setPipelineUpdates] = useState<Record<string, PipelineUpdate>>({});
   const [recentPipelineRow, setRecentPipelineRow] = useState("");
   const addPotential = useAddPotential(user);
+  const navigate = useNavigate();
 
   const displayedPotentials = useMemo(() => {
     return potentials.map((row) => {
@@ -211,10 +214,16 @@ export function PotentialCustomers({
                   See who to call, which customers need appointments, and where each opportunity sits in the pipeline.
                 </p>
               </div>
-              <Button onClick={() => setAddOpen(true)} className="sm:w-auto">
-                <Plus className="h-4 w-4" />
-                Add Customer
-              </Button>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button variant="outline" onClick={() => navigate("/daily-planning")} className="sm:w-auto">
+                  <UserRoundCheck className="h-4 w-4" />
+                  My Daily Work
+                </Button>
+                <Button onClick={() => setAddOpen(true)} className="sm:w-auto">
+                  <Plus className="h-4 w-4" />
+                  Add Customer
+                </Button>
+              </div>
             </div>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
