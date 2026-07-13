@@ -1,10 +1,9 @@
 import { Plus, UserRound, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { VisitCustomer } from "../types";
 import { Button } from "./ui/Button";
 import { LeadBadge } from "./ui/Badge";
 
-const products = ["SME Loan", "Housing Loan", "Auto Loan", "Working Capital Loan"];
 const tabs = ["Overview", "Remark", "Notes", "Activities"] as const;
 
 export function VisitCustomerDrawer({
@@ -24,11 +23,6 @@ export function VisitCustomerDrawer({
   useEffect(() => {
     setTab(initialTab);
   }, [customer, initialTab]);
-  const selectedProducts = useMemo(() => {
-    const raw = String(customer?.Potential_Product || customer?.Potential_Products || "SME Loan, Housing Loan");
-    return raw.split(",").map((item) => item.trim()).filter(Boolean);
-  }, [customer]);
-
   if (!customer) return null;
 
   return (
@@ -87,16 +81,6 @@ export function VisitCustomerDrawer({
                   ["Tenure", customer.Tenure],
                   ["Maturity Year", customer.Maturity]
                 ]} />
-                <div className="crm-card p-4">
-                  <h3 className="mb-3 text-sm font-extrabold">Potential Products</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {products.map((product) => (
-                      <span key={product} className={`rounded-md px-3 py-1.5 text-xs font-bold ${selectedProducts.includes(product) ? "bg-blue-100 text-blue-800" : "bg-slate-100 text-slate-600"}`}>
-                        {product}
-                      </span>
-                    ))}
-                  </div>
-                </div>
               </div>
             )}
             {tab === "Remark" && <InfoPanel text={String(customer.Remark || "No remark recorded.")} />}
