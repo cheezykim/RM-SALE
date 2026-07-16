@@ -60,6 +60,7 @@ CRM_COLUMNS = [
     "Customer_Key",
     "Salesperson_ID",
     "Salesperson_Name",
+    "Sender_ID",
     "Date_Added",
     "Sender_Name",
     "Name",
@@ -269,6 +270,7 @@ def load_users_from_sheets(gc, sheet_id: str, worksheet_name: str = "Users") -> 
             sources = [source.strip() for source in safe_text(allowed_raw).split(",") if source.strip()]
         users[password] = {
             "username": safe_text(user.get("username", "Unknown")),
+            "tele_id": safe_text(user.get("Tele_ID", "")),
             "allowed_sources": sources,
             "branch": safe_text(user.get("branch", "")),
             "role": safe_text(user.get("role", "rm")),
@@ -293,10 +295,20 @@ def is_manager(user: dict[str, Any]) -> bool:
     return safe_text(user.get("role", "rm")).lower() in {"manager", "admin", "management", "head", "supervisor"}
 
 
+def usable_tele_id(user: dict[str, Any]) -> str:
+    tele_id = safe_text(user.get("tele_id", ""))
+    if not tele_id or tele_id.upper() in {"N/A", "NA", "NONE", "NULL"} or tele_id.startswith("#"):
+        return ""
+    return tele_id
+
+
 def apply_visit_permissions(df: pd.DataFrame, user: dict[str, Any]) -> pd.DataFrame:
     allowed_sources = user.get("allowed_sources", "all")
     if allowed_sources != "all" and "Source_Channel" in df.columns:
-        return df[df["Source_Channel"].isin(allowed_sources)]
+        df = df[df["Source_Channel"].isin(allowed_sources)]
+    tele_id = usable_tele_id(user)
+    if tele_id and "Sender_ID" in df.columns:
+        df = df[df["Sender_ID"].astype(str).str.strip() == tele_id]
     return df
 
 
@@ -375,8 +387,11 @@ def load_potential_customers(user: dict[str, Any]) -> pd.DataFrame:
         if col not in df.columns:
             df[col] = ""
     df["_row_number"] = range(2, len(df) + 2)
-    if not is_manager(user):
-        df = df[df["Salesperson_ID"].astype(str).str.strip() == safe_text(user.get("staff_id", ""))]
+    tele_id = usable_tele_id(user)
+    if tele_id:
+        if "Sender_ID" not in df.columns:
+            return pd.DataFrame(columns=list(df.columns))
+        df = df[df["Sender_ID"].astype(str).str.strip() == tele_id]
     return clean_records(df)
 
 
@@ -393,6 +408,7 @@ def add_potential_customer(row: dict[str, Any], user: dict[str, Any]) -> tuple[b
         "Customer_Key": key,
         "Salesperson_ID": safe_text(user.get("staff_id", "")),
         "Salesperson_Name": safe_text(user.get("username", "Sales Officer")),
+        "Sender_ID": safe_text(row.get("Sender_ID", "")) or usable_tele_id(user),
         "Date_Added": today_cambodia().strftime("%Y-%m-%d"),
         "Sender_Name": row.get("Sender_Name", ""),
         "Name": row.get("Name", ""),

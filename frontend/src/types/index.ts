@@ -1,6 +1,7 @@
 export type User = {
   staff_id: string;
   username: string;
+  tele_id: string;
   role: string;
   branch: string;
   allowed_sources: "all" | string[];

@@ -27,6 +27,7 @@ class LoginRequest(BaseModel):
 class SessionUser(BaseModel):
     staff_id: str
     username: str
+    tele_id: str = ""
     role: str = "rm"
     branch: str = ""
     allowed_sources: str | list[str] = "all"
@@ -82,6 +83,7 @@ def login(payload: LoginRequest):
     return {
         "staff_id": payload.password.strip(),
         "username": user.get("username", "Sales Officer"),
+        "tele_id": user.get("tele_id", ""),
         "role": user.get("role", "rm"),
         "branch": user.get("branch", ""),
         "allowed_sources": user.get("allowed_sources", "all"),
