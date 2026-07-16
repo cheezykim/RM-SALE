@@ -1,4 +1,4 @@
-import { Building2, CalendarDays, CheckCircle2, ClipboardList, Clock3, Landmark, MapPin, PhoneCall, Plus, Send, Trash2, Users } from "lucide-react";
+import { Building2, CalendarDays, CheckCircle2, ClipboardList, Clock3, ListTodo, MapPin, Plus, Send, Trash2, Users } from "lucide-react";
 import { useState } from "react";
 import type { DailyTask, User } from "../types";
 import { todayISO } from "../lib/utils";
@@ -9,27 +9,22 @@ const activityStyles = [
   {
     row: "border-emerald-100 bg-emerald-50/60 dark:border-emerald-400/10 dark:bg-emerald-500/5",
     icon: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200",
-    Icon: Users
   },
   {
     row: "border-sky-100 bg-sky-50/60 dark:border-sky-400/10 dark:bg-sky-500/5",
     icon: "bg-sky-100 text-sky-700 dark:bg-sky-500/10 dark:text-sky-200",
-    Icon: Landmark
   },
   {
     row: "border-violet-100 bg-violet-50/60 dark:border-violet-400/10 dark:bg-violet-500/5",
     icon: "bg-violet-100 text-violet-700 dark:bg-violet-500/10 dark:text-violet-200",
-    Icon: MapPin
   },
   {
     row: "border-amber-100 bg-amber-50/60 dark:border-amber-400/10 dark:bg-amber-500/5",
     icon: "bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-200",
-    Icon: PhoneCall
   },
   {
     row: "border-teal-100 bg-teal-50/60 dark:border-teal-400/10 dark:bg-teal-500/5",
-    icon: "bg-teal-100 text-teal-700 dark:bg-teal-500/10 dark:text-teal-200",
-    Icon: ClipboardList
+    icon: "bg-teal-100 text-teal-700 dark:bg-teal-500/10 dark:text-teal-200"
   }
 ];
 
@@ -124,13 +119,11 @@ export function DailyPlanning({ user, initialTasks }: { user: User; initialTasks
         <div className="space-y-3 p-4">
           {tasks.map((task, index) => {
             const style = activityStyles[index % activityStyles.length];
-            const ActivityIcon = style.Icon;
-
             return (
               <div key={index} className={`rounded-2xl border p-4 shadow-sm ${style.row}`}>
                 <div className="grid gap-4 lg:grid-cols-[52px_210px_1fr_1fr_170px_44px] lg:items-end">
                   <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${style.icon}`}>
-                    <ActivityIcon className="h-6 w-6" />
+                    <ListTodo className="h-6 w-6" />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
