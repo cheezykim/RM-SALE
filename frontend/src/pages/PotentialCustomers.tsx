@@ -213,8 +213,7 @@ export function PotentialCustomers({
       <div className="overflow-hidden rounded-xl border border-white/70 bg-white/80 shadow-glass backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70">
         <div className="grid gap-0 lg:grid-cols-[minmax(0,1.35fr)_minmax(300px,0.65fr)]">
           <div className="p-5 sm:p-6 lg:p-7">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div>
+            <div>
                 <div className="inline-flex items-center gap-2 rounded-lg border border-bank/15 bg-bank-soft px-3 py-1 text-[11px] font-extrabold uppercase tracking-wide text-bank-dark dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200">
                   <Target className="h-3.5 w-3.5" />
                   Sales follow-up cockpit
@@ -223,12 +222,7 @@ export function PotentialCustomers({
                 <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-muted dark:text-slate-400">
                   See who to call, which customers need appointments, and where each opportunity sits in the pipeline.
                 </p>
-              </div>
-              <Button onClick={() => setAddOpen(true)} className="sm:w-auto">
-                <Plus className="h-4 w-4" />
-                Add Customer
-              </Button>
-              </div>
+            </div>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <InsightTile icon={Clock3} label="Due Today" value={followupInsights.dueToday} tone="emerald" />
