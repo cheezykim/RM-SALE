@@ -1,4 +1,4 @@
-import { Building2, CalendarDays, CheckCircle2, ClipboardList, Clock3, Landmark, MapPin, PhoneCall, Plus, Send, Users } from "lucide-react";
+import { Building2, CalendarDays, CheckCircle2, ClipboardList, Clock3, Landmark, MapPin, PhoneCall, Plus, Send, Trash2, Users } from "lucide-react";
 import { useState } from "react";
 import type { DailyTask, User } from "../types";
 import { todayISO } from "../lib/utils";
@@ -43,6 +43,10 @@ export function DailyPlanning({ user, initialTasks }: { user: User; initialTasks
 
   function updateTask(index: number, patch: Partial<DailyTask>) {
     setTasks((current) => current.map((task, i) => (i === index ? { ...task, ...patch } : task)));
+  }
+
+  function removeTask(index: number) {
+    setTasks((current) => current.filter((_, i) => i !== index));
   }
 
   function syncCustomers(index: number, countText: string) {
@@ -93,7 +97,7 @@ export function DailyPlanning({ user, initialTasks }: { user: User; initialTasks
       </div>
 
       <div className="crm-card overflow-hidden">
-        <div className="grid gap-2 border-b border-border/70 bg-slate-50/70 px-5 py-4 dark:border-white/10 dark:bg-white/[0.03] lg:grid-cols-[72px_210px_1fr_1fr_170px]">
+        <div className="grid gap-2 border-b border-border/70 bg-slate-50/70 px-5 py-4 dark:border-white/10 dark:bg-white/[0.03] lg:grid-cols-[72px_210px_1fr_1fr_170px_44px]">
           <div className="hidden text-xs font-extrabold uppercase text-slate-500 dark:text-slate-400 lg:block">Type</div>
           <div className="hidden items-center gap-2 text-xs font-extrabold uppercase text-slate-500 dark:text-slate-400 lg:flex">
             <Clock3 className="h-4 w-4" />
@@ -111,6 +115,7 @@ export function DailyPlanning({ user, initialTasks }: { user: User; initialTasks
             <Users className="h-4 w-4" />
             Customers
           </div>
+          <div className="hidden text-center text-xs font-extrabold uppercase text-slate-500 dark:text-slate-400 lg:block">Remove</div>
           <div className="flex items-center gap-2 text-sm font-extrabold text-slate-900 dark:text-white lg:hidden">
             <ClipboardList className="h-5 w-5 text-bank dark:text-emerald-300" />
             Activity Schedule
@@ -123,7 +128,7 @@ export function DailyPlanning({ user, initialTasks }: { user: User; initialTasks
 
             return (
               <div key={index} className={`rounded-2xl border p-4 shadow-sm ${style.row}`}>
-                <div className="grid gap-4 lg:grid-cols-[52px_210px_1fr_1fr_170px] lg:items-end">
+                <div className="grid gap-4 lg:grid-cols-[52px_210px_1fr_1fr_170px_44px] lg:items-end">
                   <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${style.icon}`}>
                     <ActivityIcon className="h-6 w-6" />
                   </div>
@@ -136,6 +141,16 @@ export function DailyPlanning({ user, initialTasks }: { user: User; initialTasks
                   <Field label="Activity" value={task.activity} placeholder="e.g. Market Visit" onChange={(value) => updateTask(index, { activity: value })} />
                   <Field label="Location" value={task.location} placeholder="e.g. Phnom Penh" onChange={(value) => updateTask(index, { location: value })} />
                   <Field label="Customers" value={task.num_customers} placeholder="e.g. 5" onChange={(value) => syncCustomers(index, value)} />
+                  <button
+                    type="button"
+                    className="flex h-11 w-full items-center justify-center rounded-xl border border-red-200 bg-white/80 text-red-600 transition hover:border-red-300 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500/30 dark:border-red-400/20 dark:bg-slate-950/40 dark:text-red-300 dark:hover:bg-red-500/10 lg:w-11"
+                    onClick={() => removeTask(index)}
+                    aria-label={`Remove activity ${index + 1}`}
+                    title="Remove activity"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span className="ml-2 text-sm font-bold lg:hidden">Remove Activity</span>
+                  </button>
                 </div>
 
                 {task.customers.length > 0 && (
