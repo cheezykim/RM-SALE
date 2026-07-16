@@ -24,12 +24,17 @@ export function MarketVisit({ user, visits }: { user: User; visits: VisitCustome
   const addPotential = useAddPotential(user);
 
   const potentialOptions = ["All", "H", "M", "L"];
-  const sourceOptions = ["All", ...unique(visits.map((item) => item.Source_Channel as string))];
+  const normalizedSources = unique(visits.map((item) => normalizeSourceChannel(item.Source_Channel)));
+  const sourceOptions = [
+    "All",
+    ...["Market", "Eco-list"].filter((option) => normalizedSources.includes(option)),
+    ...normalizedSources.filter((option) => option !== "Market" && option !== "Eco-list")
+  ];
 
   const filtered = useMemo(() => {
     return visits.filter((row) => {
       if (potential !== "All" && normalizeLeadLevel(row.Potential_Level) !== potential) return false;
-      if (source !== "All" && row.Source_Channel !== source) return false;
+      if (source !== "All" && normalizeSourceChannel(row.Source_Channel) !== source) return false;
       if (dateFilter === "Today" && row.Message_Date && !String(row.Message_Date).startsWith(new Date().toISOString().slice(0, 10))) return false;
       if (dateFilter === "Custom Range" && row.Message_Date) {
         const date = String(row.Message_Date).slice(0, 10);
@@ -280,6 +285,14 @@ function DateField({ label: text, value, onChange }: { label: string; value: str
 
 function unique(values: string[]) {
   return Array.from(new Set(values.filter((value) => value && value !== "nan"))).sort();
+}
+
+function normalizeSourceChannel(value: unknown) {
+  const source = safeText(value);
+  const normalized = source.toLowerCase();
+  if (normalized.includes("sales photo report") || normalized.includes("market")) return "Market";
+  if (normalized.includes("eco")) return "Eco-list";
+  return source;
 }
 
 function safeText(value: unknown, fallback = "") {

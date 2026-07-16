@@ -585,7 +585,8 @@ function latestUpdateTime(customer: PotentialCustomer) {
 }
 
 function normalizeSource(customer: PotentialCustomer) {
-  const source = safeText(customer.Source_Type, customer.Source_Channel).toLowerCase();
+  const source = `${safeText(customer.Source_Channel)} ${safeText(customer.Source_Type)}`.trim().toLowerCase();
+  if (source.includes("sales photo report")) return "Market";
   if (source.includes("eco")) return "Eco-list";
   if (source.includes("market")) return "Market";
   return source ? source : "Market";
