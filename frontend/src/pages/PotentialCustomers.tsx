@@ -1,10 +1,15 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import {
+  Banknote,
   Bell,
+  BriefcaseBusiness,
   CalendarCheck,
+  CalendarDays,
   Clock3,
   Download,
   FileText,
+  Landmark,
+  MessageSquareText,
   Phone,
   PhoneCall,
   Plus,
@@ -130,20 +135,19 @@ export function PotentialCustomers({
       accessorKey: "Name",
       header: "Customer",
       cell: ({ row }) => (
-        <div className="min-w-[210px]">
+        <div className="min-w-[220px]">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-bank dark:bg-emerald-500/10 dark:text-emerald-200">
-              <UserRoundCheck className="h-5 w-5" />
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-100 to-sky-100 text-sm font-black uppercase text-bank ring-2 ring-white shadow-sm dark:from-emerald-500/20 dark:to-sky-500/20 dark:text-emerald-200 dark:ring-slate-900">
+              {customerInitials(row.original.Name)}
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="font-extrabold text-slate-950 dark:text-white">{safeText(row.original.Name, "Unnamed customer")}</div>
-              <div className="mt-1 flex items-center gap-1.5 text-xs font-medium text-muted">
+              <div className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400">
                 <Phone className="h-3.5 w-3.5" />
                 {safeText(row.original.Tel, "No phone")}
               </div>
-              <div className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-bank-soft px-2 py-1 text-[11px] font-bold text-bank-dark dark:bg-emerald-500/10 dark:text-emerald-200">
-                <UserRoundCheck className="h-3.5 w-3.5" />
-                Sale: {safeText(row.original.Sender_Name, user.username)}
+              <div className="mt-2 inline-flex max-w-[190px] items-center gap-1.5 truncate rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200">
+                {safeText(row.original.Source_Channel, "Market")}
               </div>
             </div>
           </div>
@@ -154,10 +158,10 @@ export function PotentialCustomers({
       accessorKey: "Business",
       header: "Business Profile",
       cell: ({ row }) => (
-        <div className="min-w-[220px]">
-          <div className="font-bold text-slate-900">{safeText(row.original.Business, "-")}</div>
-          <div className="mt-1 text-xs text-muted">Bank: {safeText(row.original.Bank, "-")}</div>
-          <div className="mt-1 max-w-[260px] truncate text-xs text-muted">{safeText(row.original.Purpose, "No purpose recorded")}</div>
+        <div className="min-w-[210px] space-y-1.5">
+          <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100"><BriefcaseBusiness className="h-4 w-4 shrink-0 text-bank" />{safeText(row.original.Business, "Not specified")}</div>
+          <div className="flex items-center gap-2 text-xs text-muted"><Landmark className="h-3.5 w-3.5 shrink-0" />{safeText(row.original.Bank, "No bank recorded")}</div>
+          <div className="max-w-[230px] truncate pl-5.5 text-xs text-muted" title={safeText(row.original.Purpose)}>{safeText(row.original.Purpose, "No purpose recorded")}</div>
         </div>
       )
     },
@@ -165,10 +169,10 @@ export function PotentialCustomers({
       accessorKey: "Amount",
       header: "Facility",
       cell: ({ row }) => (
-        <div className="min-w-[170px]">
-          <div className="font-extrabold text-bank-dark">{safeText(row.original.Amount, "-")}</div>
-          <div className="mt-1 text-xs font-medium text-slate-700">{safeText(row.original.Loan_Type, "Loan type not set")}</div>
-          <div className="mt-1 text-xs text-muted">Interest: {safeText(row.original.Interest, "-")}</div>
+        <div className="min-w-[165px]">
+          <div className="flex items-center gap-2 text-base font-extrabold text-bank-dark dark:text-emerald-200"><Banknote className="h-4 w-4" />{safeText(row.original.Amount, "Not set")}</div>
+          <div className="mt-1.5 text-xs font-bold text-slate-700 dark:text-slate-300">{safeText(row.original.Loan_Type, "Loan type not set")}</div>
+          <div className="mt-1 text-[11px] text-muted">{safeText(row.original.Interest, "-")} interest</div>
         </div>
       )
     },
@@ -176,33 +180,29 @@ export function PotentialCustomers({
       accessorKey: "Status",
       header: "Pipeline",
       cell: ({ row }) => (
-        <div className="min-w-[150px] space-y-2">
-          <StatusBadge status={row.original.Status} outlined={false} />
-          <div className="text-xs font-semibold text-muted">Updated {formatDate(row.original.Last_Updated, "-")}</div>
+        <div className="min-w-[135px] space-y-2">
+          <div className="flex items-center gap-2"><StatusBadge status={row.original.Status} /><LeadBadge level={row.original.Potential_Level} /></div>
+          <div className="text-[11px] font-semibold text-muted">Updated {formatDate(row.original.Last_Updated, "-")}</div>
         </div>
       )
     },
     {
-      accessorKey: "Potential_Level",
-      header: "Signal",
-      cell: ({ row }) => <LeadBadge level={row.original.Potential_Level} />
-    },
-    {
       accessorKey: "Next_Follow_Up",
-      header: "Next Action",
+      header: "Follow-up",
       cell: ({ row }) => (
-        <div className="min-w-[150px]">
-          <div className="font-bold text-slate-900">{formatDate(row.original.Next_Follow_Up, "No follow up")}</div>
-          <div className="mt-1 text-xs text-muted">Added {formatDate(row.original.Date_Added, "-")}</div>
+        <div className="min-w-[145px]">
+          <div className={`inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-extrabold ${followUpDateClass(row.original.Next_Follow_Up)}`}><CalendarDays className="h-3.5 w-3.5" />{formatDate(row.original.Next_Follow_Up, "Not scheduled")}</div>
+          <div className="mt-2 text-[11px] text-muted">Added {formatDate(row.original.Date_Added, "-")}</div>
         </div>
       )
     },
     {
       accessorKey: "Remark",
-      header: "Remark",
+      header: "Latest Note",
       cell: ({ row }) => (
-        <div className="max-w-[260px]">
-          <div className="line-clamp-2 text-sm leading-5 text-slate-700">{safeText(row.original.Remark, "No remark recorded.")}</div>
+        <div className="flex min-w-[190px] max-w-[250px] items-start gap-2 rounded-lg bg-slate-50 px-3 py-2 dark:bg-white/5">
+          <MessageSquareText className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+          <div className="line-clamp-2 text-xs font-medium leading-5 text-slate-600 dark:text-slate-300">{safeText(row.original.Remark, "No note recorded")}</div>
         </div>
       )
     }
@@ -315,6 +315,7 @@ export function PotentialCustomers({
         </button>
       </div>
       <DataTable
+        tone="blue"
         data={filtered}
         columns={columns}
         search={query}
@@ -565,6 +566,20 @@ function Select({ label, value, options, onChange, optionLabel = (option) => opt
 function safeText(value: unknown, fallback = "") {
   const text = String(value ?? "").trim();
   return text && text.toLowerCase() !== "nan" ? text : fallback;
+}
+
+function customerInitials(name: unknown) {
+  const words = safeText(name, "Customer").split(/\s+/).filter(Boolean);
+  return words.slice(0, 2).map((word) => word[0]).join("");
+}
+
+function followUpDateClass(value: unknown) {
+  const date = safeText(value).slice(0, 10);
+  if (!date) return "bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400";
+  const today = new Date().toISOString().slice(0, 10);
+  if (date < today) return "bg-red-50 text-red-700 ring-1 ring-red-100 dark:bg-red-500/10 dark:text-red-200 dark:ring-red-400/20";
+  if (date === today) return "bg-amber-50 text-amber-700 ring-1 ring-amber-100 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-400/20";
+  return "bg-sky-50 text-sky-700 ring-1 ring-sky-100 dark:bg-sky-500/10 dark:text-sky-200 dark:ring-sky-400/20";
 }
 
 function formatDate(value: unknown, fallback: string) {

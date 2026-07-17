@@ -207,7 +207,7 @@ export function MarketVisit({ user, visits }: { user: User; visits: VisitCustome
         Showing {filtered.length.toLocaleString()} customers
       </div>
       {message && <div className="rounded-xl border border-bank/20 bg-bank-soft/80 px-4 py-3 text-sm font-bold text-bank-dark shadow-sm backdrop-blur dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200">{message}</div>}
-      <DataTable data={filtered} columns={columns} search={query} onRowClick={(customer) => { setDetailTab("Overview"); setSelected(customer); }} />
+      <DataTable tone="emerald" data={filtered} columns={columns} search={query} onRowClick={(customer) => { setDetailTab("Overview"); setSelected(customer); }} />
       <VisitCustomerDrawer customer={selected} initialTab={detailTab} onClose={() => setSelected(null)} onAddPotential={addSelected} saving={addPotential.isPending} />
     </section>
   );
