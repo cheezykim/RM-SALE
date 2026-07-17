@@ -35,5 +35,27 @@ export function StatusBadge({ status, outlined = true }: { status?: string; outl
         : normalized === "interested-need appointment"
           ? "border-blue-200/80 bg-blue-50/90 text-blue-800 dark:border-blue-400/20 dark:bg-blue-500/10 dark:text-blue-200"
           : "border-amber-200/80 bg-amber-50/90 text-amber-800 dark:border-amber-400/20 dark:bg-amber-500/10 dark:text-amber-200";
-  return <span className={cn("inline-flex rounded-lg px-2.5 py-1 text-xs font-bold", outlined && "border shadow-sm", color)}>{value}</span>;
+  return (
+    <span
+      className={cn("inline-flex rounded-lg px-2.5 py-1 text-xs font-bold", outlined && "border shadow-sm", color)}
+      title={value}
+    >
+      {shortStatusLabel(value)}
+    </span>
+  );
+}
+
+export function shortStatusLabel(status?: string) {
+  switch ((status || "").trim().toLowerCase()) {
+    case "not interested / need":
+      return "Not Interested";
+    case "open to more information":
+      return "Open";
+    case "interested-need appointment":
+      return "Appointment";
+    case "study initiated":
+      return "Study";
+    default:
+      return status || "Not Interested";
+  }
 }

@@ -20,7 +20,7 @@ import { useMemo, useState } from "react";
 import salespersonFollowup from "../assets/salesperson-followup.svg";
 import { DataTable } from "../components/DataTable";
 import { CustomerDrawer } from "../components/CustomerDrawer";
-import { LeadBadge, normalizeLeadLevel, StatusBadge } from "../components/ui/Badge";
+import { LeadBadge, normalizeLeadLevel, shortStatusLabel, StatusBadge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { useAddPotential } from "../hooks/useCrmData";
 import type { PotentialCustomer, User, VisitCustomer } from "../types";
@@ -285,7 +285,7 @@ export function PotentialCustomers({
               <input className="input-control pl-9" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search customer..." />
             </div>
           </div>
-          <Select label="Status" value={status} options={["All", ...pipelineStatuses]} onChange={setStatus} />
+          <Select label="Status" value={status} options={["All", ...pipelineStatuses]} onChange={setStatus} optionLabel={(option) => option === "All" ? option : shortStatusLabel(option)} />
           <Select label="Source" value={source} options={sourceOptions} onChange={setSource} />
           <Select label="Signal" value={level} options={["All", "H", "M", "L"]} onChange={setLevel} />
           <Select label="Date Added" value={dateFilter} options={["All", "Today", "Last 7 Days", "This Month"]} onChange={setDateFilter} />
@@ -551,12 +551,12 @@ function TextField({
   );
 }
 
-function Select({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (value: string) => void }) {
+function Select({ label, value, options, onChange, optionLabel = (option) => option }: { label: string; value: string; options: string[]; onChange: (value: string) => void; optionLabel?: (option: string) => string }) {
   return (
     <div>
       <label className="label">{label}</label>
       <select className="input-control" value={value} onChange={(event) => onChange(event.target.value)}>
-        {options.map((option) => <option key={option}>{option}</option>)}
+        {options.map((option) => <option key={option} value={option}>{optionLabel(option)}</option>)}
       </select>
     </div>
   );
