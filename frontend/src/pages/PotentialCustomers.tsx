@@ -125,8 +125,9 @@ export function PotentialCustomers({
       detail: "New customer",
       icon: UserPlus,
       active: false,
+      primary: true,
       onClick: () => setAddOpen(true),
-      tone: "slate"
+      tone: "emerald"
     }
   ];
 
@@ -238,7 +239,9 @@ export function PotentialCustomers({
                   type="button"
                   onClick={action.onClick}
                   className={`group flex h-20 items-center gap-3 rounded-lg border px-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-lift ${
-                    action.active
+                    action.primary
+                      ? "border-emerald-600 bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-emerald-200/70 hover:border-emerald-700 hover:from-emerald-700 hover:to-green-700 dark:border-emerald-400 dark:from-emerald-600 dark:to-green-700 dark:text-white dark:shadow-none"
+                      : action.active
                       ? "border-bank/40 bg-bank-soft text-bank-dark dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-100"
                       : "border-slate-200/80 bg-white/75 text-slate-800 hover:border-bank/25 hover:bg-white dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
                   }`}
@@ -248,7 +251,7 @@ export function PotentialCustomers({
                   </span>
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-extrabold">{action.label}</span>
-                    <span className="mt-1 block truncate text-xs font-semibold text-muted dark:text-slate-400">{action.detail}</span>
+                    <span className={`mt-1 block truncate text-xs font-semibold ${action.primary ? "text-emerald-50" : "text-muted dark:text-slate-400"}`}>{action.detail}</span>
                   </span>
                 </button>
               ))}
