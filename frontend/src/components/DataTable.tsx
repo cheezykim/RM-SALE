@@ -17,9 +17,10 @@ type DataTableProps<T> = {
   onRowClick?: (row: T) => void;
   getRowClassName?: (row: T) => string;
   tone?: "default" | "emerald" | "blue";
+  headerTone?: "default" | "emerald" | "blue";
 };
 
-export function DataTable<T>({ data, columns, search = "", pageSize = 30, onRowClick, getRowClassName, tone = "default" }: DataTableProps<T>) {
+export function DataTable<T>({ data, columns, search = "", pageSize = 30, onRowClick, getRowClassName, tone = "default", headerTone = tone }: DataTableProps<T>) {
   const table = useReactTable({
     data,
     columns,
@@ -34,11 +35,11 @@ export function DataTable<T>({ data, columns, search = "", pageSize = 30, onRowC
     <div className={`crm-card overflow-hidden ${tone === "emerald" ? "ring-1 ring-emerald-100 dark:ring-emerald-400/20" : tone === "blue" ? "ring-1 ring-blue-100 dark:ring-blue-400/20" : ""}`}>
       <div className="overflow-x-auto">
         <table className="min-w-[1040px] w-full border-collapse text-sm">
-          <thead className={`${headerToneClass(tone)} backdrop-blur`}>
+          <thead className={`${headerToneClass(headerTone)} backdrop-blur`}>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <th key={header.id} className={`border-b px-5 py-4 text-left text-[11px] font-extrabold uppercase tracking-wider ${headerCellToneClass(tone)}`}>
+                  <th key={header.id} className={`border-b px-5 py-4 text-left text-[11px] font-extrabold uppercase tracking-wider ${headerCellToneClass(headerTone)}`}>
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </th>
                 ))}

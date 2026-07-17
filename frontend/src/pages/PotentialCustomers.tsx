@@ -316,6 +316,7 @@ export function PotentialCustomers({
       </div>
       <DataTable
         tone="blue"
+        headerTone="emerald"
         data={filtered}
         columns={columns}
         search={query}
