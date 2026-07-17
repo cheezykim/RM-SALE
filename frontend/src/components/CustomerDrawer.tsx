@@ -1,4 +1,4 @@
-import { Building2, CalendarClock, FileText, Landmark, Save, X } from "lucide-react";
+import { Activity, Building2, CalendarClock, CheckCircle2, Clock3, FileText, Landmark, MessageSquareText, PhoneCall, Save, UserPlus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { PotentialCustomer } from "../types";
 import { Button } from "./ui/Button";
@@ -162,12 +162,9 @@ export function CustomerDrawer({
           )}
 
           {tab === "Activities" && (
-            <TextAreaPanel
-              icon={FileText}
-              title="Customer Activity"
+            <ActivityTimeline
               value={form.Activities}
               onChange={(value) => update("Activities", value)}
-              placeholder="Record call notes, follow-up activity, visit results, and next customer movement."
             />
           )}
         </div>
@@ -184,6 +181,98 @@ export function CustomerDrawer({
       </aside>
     </div>
   );
+}
+
+function ActivityTimeline({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const events = parseActivities(value).reverse();
+
+  return (
+    <div className="space-y-5">
+      <div className="overflow-hidden rounded-xl border border-emerald-200 bg-white shadow-sm">
+        <div className="flex items-center justify-between gap-3 border-b border-emerald-100 bg-gradient-to-r from-emerald-700 to-teal-700 px-5 py-4 text-white">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15"><Activity className="h-5 w-5" /></div>
+            <div>
+              <h3 className="text-sm font-extrabold">Customer Interaction Timeline</h3>
+              <p className="mt-0.5 text-xs font-medium text-emerald-50">Sales follow-ups and customer movements</p>
+            </div>
+          </div>
+          <span className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-extrabold">{events.length} events</span>
+        </div>
+
+        <div className="p-5">
+          {events.length ? (
+            <div className="space-y-0">
+              {events.map((event, index) => {
+                const Icon = activityIcon(event.description);
+                return (
+                  <div key={`${event.date}-${event.description}-${index}`} className="relative flex gap-4 pb-6 last:pb-0">
+                    {index < events.length - 1 && <div className="absolute left-[17px] top-9 h-[calc(100%-20px)] w-0.5 bg-emerald-200" />}
+                    <div className="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-4 border-white bg-emerald-600 text-white shadow-sm">
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-3 transition hover:border-emerald-300 hover:bg-emerald-50/50">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-sm font-extrabold text-slate-900">{activityTitle(event.description)}</p>
+                        {event.date && <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-slate-500 ring-1 ring-slate-200"><Clock3 className="h-3 w-3" />{event.date}</span>}
+                      </div>
+                      <p className="mt-1.5 text-sm leading-5 text-slate-600">{event.description}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="rounded-lg border border-dashed border-emerald-200 bg-emerald-50/50 px-5 py-8 text-center">
+              <MessageSquareText className="mx-auto h-7 w-7 text-emerald-500" />
+              <p className="mt-2 text-sm font-extrabold text-slate-800">No customer interactions recorded</p>
+              <p className="mt-1 text-xs text-slate-500">Add the first follow-up activity below.</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="mb-3 flex items-center gap-2">
+          <MessageSquareText className="h-4 w-4 text-bank" />
+          <label className="text-sm font-extrabold text-slate-900">Update Activity Log</label>
+        </div>
+        <textarea
+          className="min-h-36 w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/15"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder="Example: 17 Jul 2026 - Called customer to discuss loan requirements"
+        />
+        <p className="mt-2 text-xs text-slate-500">Enter one interaction per line using “date - activity”. Newest events appear first in the timeline.</p>
+      </div>
+    </div>
+  );
+}
+
+function parseActivities(value: string) {
+  return value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map((line) => {
+    const separator = line.indexOf(" - ");
+    return separator >= 0
+      ? { date: line.slice(0, separator).trim(), description: line.slice(separator + 3).trim() }
+      : { date: "", description: line };
+  });
+}
+
+function activityTitle(description: string) {
+  const text = description.toLowerCase();
+  if (text.includes("status changed")) return "Pipeline Updated";
+  if (text.includes("added to potential") || text.includes("lead")) return "Lead Created";
+  if (text.includes("call") || text.includes("phone")) return "Customer Call";
+  if (text.includes("meeting") || text.includes("visit") || text.includes("appointment")) return "Customer Meeting";
+  return "Follow-up Activity";
+}
+
+function activityIcon(description: string) {
+  const text = description.toLowerCase();
+  if (text.includes("status changed")) return CheckCircle2;
+  if (text.includes("added to potential") || text.includes("lead")) return UserPlus;
+  if (text.includes("call") || text.includes("phone")) return PhoneCall;
+  return MessageSquareText;
 }
 
 function buildForm(customer: PotentialCustomer | null): CustomerForm {
