@@ -317,6 +317,9 @@ def load_visit_data_for_crm(user: dict[str, Any]) -> pd.DataFrame:
     df = load_sheet_data(gc, SHEET_ID, WORKSHEET_NAME)
     if df.empty:
         return pd.DataFrame()
+    # Keep the source row so clients can consistently put newly appended
+    # Google Sheet records first when timestamps are equal or unavailable.
+    df["_row_number"] = range(2, len(df) + 2)
     df = clean_records(df)
     if "Name" in df.columns:
         df = df[df["Name"].notna() & (df["Name"].str.strip() != "")]

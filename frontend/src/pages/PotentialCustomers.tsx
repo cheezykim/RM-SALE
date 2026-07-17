@@ -78,7 +78,7 @@ export function PotentialCustomers({
       if (dateFilter === "This Month" && (!added || added.getMonth() !== today.getMonth() || added.getFullYear() !== today.getFullYear())) return false;
       if (query) return Object.values(row).join(" ").toLowerCase().includes(query.toLowerCase());
       return true;
-    }).sort((a, b) => latestUpdateTime(b) - latestUpdateTime(a));
+    }).sort(compareNewestPotential);
   }, [displayedPotentials, query, status, source, level, dateFilter]);
 
   const followupInsights = useMemo(() => {
@@ -582,6 +582,17 @@ function latestUpdateTime(customer: PotentialCustomer) {
   const normalized = timestamp.includes("T") ? timestamp : timestamp.replace(" ", "T");
   const time = new Date(normalized).getTime();
   return Number.isFinite(time) ? time : 0;
+}
+
+function compareNewestPotential(a: PotentialCustomer, b: PotentialCustomer) {
+  const timeDifference = latestUpdateTime(b) - latestUpdateTime(a);
+  if (timeDifference) return timeDifference;
+  return rowNumberValue(b._row_number) - rowNumberValue(a._row_number);
+}
+
+function rowNumberValue(value: unknown) {
+  const rowNumber = Number(value);
+  return Number.isFinite(rowNumber) ? rowNumber : 0;
 }
 
 function normalizeSource(customer: PotentialCustomer) {

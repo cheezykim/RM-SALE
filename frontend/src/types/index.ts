@@ -31,6 +31,7 @@ export type VisitCustomer = {
   Source_Channel?: string;
   Message_Date?: string;
   Entry_Type?: string;
+  _row_number?: string | number;
   [key: string]: unknown;
 };
 

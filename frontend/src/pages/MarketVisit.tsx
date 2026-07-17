@@ -43,7 +43,7 @@ export function MarketVisit({ user, visits }: { user: User; visits: VisitCustome
       }
       if (query) return Object.values(row).join(" ").toLowerCase().includes(query.toLowerCase());
       return true;
-    });
+    }).sort(compareNewestVisit);
   }, [visits, potential, source, dateFilter, startDate, endDate, query]);
   const hotCount = filtered.filter((row) => normalizeLeadLevel(row.Potential_Level) === "H").length;
   const sourceCount = sourceOptions.length > 1 ? sourceOptions.length - 1 : 0;
@@ -303,6 +303,24 @@ function safeText(value: unknown, fallback = "") {
 function formatDate(value: unknown) {
   const text = safeText(value);
   return text ? text.slice(0, 10) : "No date";
+}
+
+function compareNewestVisit(a: VisitCustomer, b: VisitCustomer) {
+  const timeDifference = timestampValue(b.Message_Date) - timestampValue(a.Message_Date);
+  if (timeDifference) return timeDifference;
+  return rowNumberValue(b._row_number) - rowNumberValue(a._row_number);
+}
+
+function timestampValue(value: unknown) {
+  const timestamp = safeText(value);
+  if (!timestamp) return 0;
+  const parsed = new Date(timestamp.includes("T") ? timestamp : timestamp.replace(" ", "T")).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function rowNumberValue(value: unknown) {
+  const rowNumber = Number(value);
+  return Number.isFinite(rowNumber) ? rowNumber : 0;
 }
 
 function exportCsv(rows: VisitCustomer[], filename: string) {
