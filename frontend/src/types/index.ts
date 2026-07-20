@@ -67,6 +67,11 @@ export type PotentialCustomer = {
   [key: string]: unknown;
 };
 
+export type MerchantRecord = {
+  _row_number?: string | number;
+  [key: string]: unknown;
+};
+
 export type DailyTask = {
   start_time: string;
   end_time: string;
@@ -100,6 +105,7 @@ export type BootstrapData = {
   navigation: string[];
   visits: VisitCustomer[];
   potentials: PotentialCustomer[];
+  merchants: MerchantRecord[];
   dashboard: DashboardData;
   dailyTasks: DailyTask[];
   crmColumns: string[];

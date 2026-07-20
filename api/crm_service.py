@@ -24,6 +24,7 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, Tabl
 BASE_DIR = Path(__file__).resolve().parent.parent
 SHEET_ID = "1wM7DTHizhg_A3h0qV3EhX4os4hk46uolW-ESQSJkgZs"
 WORKSHEET_NAME = "retail_data"
+MERCHANT_SHEET_NAME = "My_Merchant"
 CRM_SHEET_NAME = "potential_customers"
 NEW_CUSTOMER_SHEET_NAME = "New_customer"
 REPORT_ARCHIVE_SHEET_NAME = "rm_report_submissions"
@@ -329,6 +330,23 @@ def load_visit_data_for_crm(user: dict[str, Any]) -> pd.DataFrame:
             & (df["Sender_Name"].str.strip() != "Khemra BUTH")
         ]
     df = apply_visit_permissions(df, user)
+    return df.fillna("")
+
+
+def load_merchant_data(user: dict[str, Any]) -> pd.DataFrame:
+    gc = connect_to_google_sheets()
+    df = load_sheet_data(gc, SHEET_ID, MERCHANT_SHEET_NAME)
+    if df.empty:
+        return pd.DataFrame()
+    df["_row_number"] = range(2, len(df) + 2)
+    df = clean_records(df)
+    tele_id = usable_tele_id(user)
+    if tele_id and "Sender_ID" in df.columns:
+        df = df[df["Sender_ID"].astype(str).str.strip() == tele_id]
+    elif not is_manager(user) and "Salesperson_ID" in df.columns:
+        staff_id = safe_text(user.get("staff_id", ""))
+        if staff_id:
+            df = df[df["Salesperson_ID"].astype(str).str.strip() == staff_id]
     return df.fillna("")
 
 

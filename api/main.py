@@ -96,12 +96,14 @@ def bootstrap(user: SessionUser):
     try:
         visits = crm.load_visit_data_for_crm(user_dict(user))
         potentials = crm.load_potential_customers(user_dict(user))
+        merchants = crm.load_merchant_data(user_dict(user))
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     return {
         "navigation": crm.NAV_ITEMS,
         "visits": crm.to_records(visits),
         "potentials": crm.to_records(potentials),
+        "merchants": crm.to_records(merchants),
         "dashboard": crm.dashboard_summary(visits, potentials),
         "dailyTasks": crm.default_daily_tasks(),
         "crmColumns": crm.CRM_COLUMNS,
