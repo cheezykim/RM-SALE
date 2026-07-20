@@ -1,19 +1,16 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { BriefcaseBusiness, CalendarClock, CalendarDays, MapPin, Phone, Search, Store, UserRoundCheck, Users } from "lucide-react";
+import { BadgeDollarSign, Phone, Search, Store, UserRoundCheck, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { DataTable } from "../components/DataTable";
 import type { MerchantRecord } from "../types";
 
 type MerchantView = MerchantRecord & {
-  name: string;
-  owner: string;
-  business: string;
-  phone: string;
-  source: string;
+  merchantId: string;
+  ownerName: string;
+  merchantPhone: string;
   status: string;
-  nextAction: string;
+  usdAccountStatus: string;
   messageDate: string;
-  location: string;
 };
 
 export function MyMerchant({ merchants }: { merchants: MerchantRecord[] }) {
@@ -28,40 +25,31 @@ export function MyMerchant({ merchants }: { merchants: MerchantRecord[] }) {
   }), [records, query, status]);
 
   const activeCount = records.filter((merchant) => merchant.status.toLowerCase() === "active").length;
-  const followUpCount = records.filter((merchant) => Boolean(merchant.nextAction)).length;
-  const newThisMonth = records.filter((merchant) => isThisMonth(merchant.messageDate)).length;
+  const usdAccountCount = records.filter((merchant) => isActiveStatus(merchant.usdAccountStatus)).length;
+  const ownerCount = new Set(records.map((merchant) => merchant.ownerName).filter(Boolean)).size;
 
   const columns: ColumnDef<MerchantView>[] = [
     {
-      accessorKey: "name",
-      header: "Merchant",
+      accessorKey: "merchantId",
+      header: "Merchant ID",
       cell: ({ row }) => (
-        <div className="flex min-w-[220px] items-start gap-3">
+        <div className="flex min-w-[190px] items-center gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-600 to-teal-600 text-sm font-black text-white shadow-sm ring-2 ring-emerald-100">
-            {initials(row.original.name)}
+            <Store className="h-5 w-5" />
           </div>
-          <div className="min-w-0">
-            <p className="font-extrabold text-slate-950 dark:text-white">{row.original.name || "Unnamed merchant"}</p>
-            <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-slate-500"><Phone className="h-3.5 w-3.5" />{row.original.phone || "No phone"}</p>
-            <span className="mt-2 inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-emerald-700 ring-1 ring-emerald-100">{row.original.source || "My Merchant"}</span>
-          </div>
+          <p className="font-extrabold text-slate-950 dark:text-white">{row.original.merchantId || "No merchant ID"}</p>
         </div>
       )
     },
     {
-      accessorKey: "business",
-      header: "Business Profile",
-      cell: ({ row }) => (
-        <div className="min-w-[190px] space-y-1.5">
-          <p className="flex items-center gap-2 font-bold text-slate-900 dark:text-white"><BriefcaseBusiness className="h-4 w-4 text-emerald-600" />{row.original.business || "Not specified"}</p>
-          <p className="flex items-center gap-2 text-xs text-slate-500"><MapPin className="h-3.5 w-3.5" />{row.original.location || "No location"}</p>
-        </div>
-      )
+      accessorKey: "ownerName",
+      header: "Owner Name",
+      cell: ({ row }) => <div className="min-w-[180px] font-bold text-slate-700 dark:text-slate-200">{row.original.ownerName || "No owner name"}</div>
     },
     {
-      accessorKey: "owner",
-      header: "Relationship Owner",
-      cell: ({ row }) => <div className="min-w-[150px] font-bold text-slate-700 dark:text-slate-200">{row.original.owner || "Not assigned"}</div>
+      accessorKey: "merchantPhone",
+      header: "Merchant Phone",
+      cell: ({ row }) => <div className="flex min-w-[165px] items-center gap-2 font-semibold text-slate-700 dark:text-slate-200"><Phone className="h-4 w-4 text-emerald-600" />{row.original.merchantPhone || "No phone"}</div>
     },
     {
       accessorKey: "status",
@@ -69,14 +57,9 @@ export function MyMerchant({ merchants }: { merchants: MerchantRecord[] }) {
       cell: ({ row }) => <StatusPill value={row.original.status || "Unspecified"} />
     },
     {
-      accessorKey: "nextAction",
-      header: "Next Action",
-      cell: ({ row }) => (
-        <div className="min-w-[180px]">
-          <p className="font-bold text-slate-800 dark:text-slate-200">{row.original.nextAction || "No action scheduled"}</p>
-          <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-slate-500"><CalendarDays className="h-3.5 w-3.5" />{row.original.messageDate || "No date"}</p>
-        </div>
-      )
+      accessorKey: "usdAccountStatus",
+      header: "USD Account Status",
+      cell: ({ row }) => <StatusPill value={row.original.usdAccountStatus || "Unspecified"} />
     }
   ];
 
@@ -86,8 +69,8 @@ export function MyMerchant({ merchants }: { merchants: MerchantRecord[] }) {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard icon={Store} label="Assigned Merchants" value={records.length} tone="emerald" />
         <MetricCard icon={UserRoundCheck} label="Active" value={activeCount} tone="blue" />
-        <MetricCard icon={CalendarClock} label="Needs Follow Up" value={followUpCount} tone="amber" />
-        <MetricCard icon={Users} label="New This Month" value={newThisMonth} tone="violet" />
+        <MetricCard icon={BadgeDollarSign} label="Active USD Accounts" value={usdAccountCount} tone="amber" />
+        <MetricCard icon={Users} label="Merchant Owners" value={ownerCount} tone="violet" />
       </div>
       <div className="crm-card p-4">
         <div className="grid gap-4 lg:grid-cols-[1fr_260px]">
@@ -107,15 +90,12 @@ export function MyMerchant({ merchants }: { merchants: MerchantRecord[] }) {
 function normalizeMerchant(row: MerchantRecord): MerchantView {
   return {
     ...row,
-    name: field(row, "Merchant_Name", "Merchant", "Name", "Shop_Name"),
-    owner: field(row, "SALE INCHARGE", "Owner", "Owner_Name", "Merchant_Owner", "Salesperson_Name", "Sender_Name"),
-    business: field(row, "Business", "Business_Type", "Category", "Merchant_Type"),
-    phone: field(row, "Tel", "Phone", "Phone_Number", "Contact", "Mobile"),
-    source: field(row, "Source_Channel", "Source", "Source_Type"),
-    status: field(row, "Status", "Merchant_Status"),
-    nextAction: field(row, "Next_Action", "Next_Follow_Up", "Follow_Up", "Action"),
-    messageDate: field(row, "Message_Date", "Date_Added", "Created_At", "Created_Date", "Date"),
-    location: field(row, "Location", "Address", "Province", "Branch")
+    merchantId: field(row, "MERCHANT ID"),
+    ownerName: field(row, "OWNER NAME"),
+    merchantPhone: field(row, "MERCHANT_PHONE"),
+    status: field(row, "STATUS"),
+    usdAccountStatus: field(row, "STATUS USD ACCOUNT"),
+    messageDate: field(row, "Message_Date", "Date_Added", "Created_At", "Created_Date", "Date")
   };
 }
 
@@ -133,14 +113,7 @@ function compareNewest(a: MerchantView, b: MerchantView) {
   return Number(b._row_number || 0) - Number(a._row_number || 0);
 }
 
-function initials(name: string) { return (name || "M").split(/\s+/).slice(0, 2).map((word) => word[0]).join("").toUpperCase(); }
-
-function isThisMonth(value: string) {
-  if (!value) return false;
-  const date = new Date(value);
-  const today = new Date();
-  return Number.isFinite(date.getTime()) && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
-}
+function isActiveStatus(value: string) { return ["active", "yes", "open", "opened"].includes(value.trim().toLowerCase()); }
 
 function PageHeader() {
   return <div className="crm-card p-5"><div className="flex items-center gap-4"><div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 text-bank-dark"><Store className="h-7 w-7" /></div><div><h2 className="page-title">MyMerchant</h2><p className="section-note">Live merchant records from the My_Merchant Google Sheet.</p></div></div></div>;
