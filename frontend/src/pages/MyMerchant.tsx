@@ -105,7 +105,7 @@ function normalizeMerchant(row: MerchantRecord): MerchantView {
     merchantId: field(row, "MERCHANT ID"),
     ownerName: field(row, "OWNER NAME"),
     merchantPhone: field(row, "MERCHANT_PHONE"),
-    status: field(row, "STATUS"),
+    status: field(row, "STATUS", "MERCHANT STATUS", "STATUS MERCHANT", "MERCHANT_STATUS"),
     usdAccountStatus: field(row, "STATUS USD ACCOUNT", "USD ACCOUNT STATUS", "STATUS_USD_ACCOUNT", "USD_STATUS", "STATUS USD"),
     dateRegister: field(row, "DATE REGISTER", "REGISTER DATE", "DATE_REGISTER", "REGISTRATION DATE"),
     messageDate: field(row, "Message_Date", "Date_Added", "Created_At", "Created_Date", "Date")
@@ -134,8 +134,19 @@ function compareNewest(a: MerchantView, b: MerchantView) {
 
 function isActiveStatus(value: string) {
   const status = value.trim().toLowerCase();
-  if (!status || status.includes("inactive") || status.includes("closed") || status === "no" || status === "0") return false;
-  return status.includes("active") || status.includes("open") || status === "yes" || status === "1" || status.includes("available");
+  if (!status || status.includes("inactive") || status.includes("closed") || status.includes("disabled") || status === "no" || status === "n" || status === "false" || status === "0") return false;
+  return status.includes("active")
+    || status.includes("activated")
+    || status.includes("live")
+    || status.includes("open")
+    || status.includes("approved")
+    || status.includes("enabled")
+    || status.includes("operational")
+    || status.includes("available")
+    || status === "yes"
+    || status === "y"
+    || status === "true"
+    || status === "1";
 }
 
 function PageHeader() {
