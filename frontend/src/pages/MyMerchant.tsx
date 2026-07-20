@@ -108,7 +108,7 @@ function normalizeMerchant(row: MerchantRecord): MerchantView {
   return {
     ...row,
     name: field(row, "Merchant_Name", "Merchant", "Name", "Shop_Name"),
-    owner: field(row, "Owner", "Owner_Name", "Merchant_Owner", "Salesperson_Name", "Sender_Name"),
+    owner: field(row, "SALE INCHARGE", "Owner", "Owner_Name", "Merchant_Owner", "Salesperson_Name", "Sender_Name"),
     business: field(row, "Business", "Business_Type", "Category", "Merchant_Type"),
     phone: field(row, "Tel", "Phone", "Phone_Number", "Contact", "Mobile"),
     source: field(row, "Source_Channel", "Source", "Source_Type"),

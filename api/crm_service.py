@@ -340,13 +340,19 @@ def load_merchant_data(user: dict[str, Any]) -> pd.DataFrame:
         return pd.DataFrame()
     df["_row_number"] = range(2, len(df) + 2)
     df = clean_records(df)
-    tele_id = usable_tele_id(user)
-    if tele_id and "Sender_ID" in df.columns:
-        df = df[df["Sender_ID"].astype(str).str.strip() == tele_id]
-    elif not is_manager(user) and "Salesperson_ID" in df.columns:
-        staff_id = safe_text(user.get("staff_id", ""))
-        if staff_id:
-            df = df[df["Salesperson_ID"].astype(str).str.strip() == staff_id]
+    if not is_manager(user):
+        sale_name = safe_text(user.get("username", "")).casefold()
+        if "SALE INCHARGE" in df.columns and sale_name:
+            assigned_sale = df["SALE INCHARGE"].astype(str).str.strip().str.casefold()
+            df = df[assigned_sale == sale_name]
+        else:
+            tele_id = usable_tele_id(user)
+            if tele_id and "Sender_ID" in df.columns:
+                df = df[df["Sender_ID"].astype(str).str.strip() == tele_id]
+            elif "Salesperson_ID" in df.columns:
+                staff_id = safe_text(user.get("staff_id", ""))
+                if staff_id:
+                    df = df[df["Salesperson_ID"].astype(str).str.strip() == staff_id]
     return df.fillna("")
 
 
