@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { BadgeDollarSign, CalendarDays, Phone, Search, Store, UserRoundCheck, Users } from "lucide-react";
+import { CalendarDays, Phone, Search, Store, UserRoundCheck } from "lucide-react";
 import { useMemo, useState } from "react";
 import { DataTable } from "../components/DataTable";
 import type { MerchantRecord } from "../types";
@@ -26,10 +26,6 @@ export function MyMerchant({ merchants }: { merchants: MerchantRecord[] }) {
   }), [records, query, status]);
 
   const activeCount = records.filter((merchant) => isActiveStatus(merchant.status)).length;
-  const usdAccountCount = records.filter((merchant) => isActiveStatus(merchant.usdAccountStatus)).length;
-  const ownerCount = new Set(records.map((merchant) => merchant.ownerName).filter(Boolean)).size;
-  const usdAccountRate = records.length ? Math.round((usdAccountCount / records.length) * 100) : 0;
-  const activeMerchantRate = records.length ? Math.round((activeCount / records.length) * 100) : 0;
 
   const columns: ColumnDef<MerchantView>[] = [
     {
@@ -74,15 +70,9 @@ export function MyMerchant({ merchants }: { merchants: MerchantRecord[] }) {
   return (
     <section className="space-y-5">
       <PageHeader />
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2">
         <MetricCard icon={Store} label="Assigned Merchants" value={records.length} tone="emerald" />
         <MetricCard icon={UserRoundCheck} label="Active" value={activeCount} tone="blue" />
-        <MetricCard icon={BadgeDollarSign} label="Active USD Accounts" value={usdAccountCount} tone="amber" />
-        <MetricCard icon={Users} label="Merchant Owners" value={ownerCount} tone="violet" />
-      </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        <CoverageCard label="Merchant Activity" value={activeCount} total={records.length} percentage={activeMerchantRate} color="emerald" />
-        <CoverageCard label="USD Account Activation" value={usdAccountCount} total={records.length} percentage={usdAccountRate} color="amber" />
       </div>
       <div className="crm-card p-4">
         <div className="grid gap-4 lg:grid-cols-[1fr_260px]">
@@ -153,24 +143,9 @@ function PageHeader() {
   return <div className="crm-card p-5"><div className="flex items-center gap-4"><div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 text-bank-dark"><Store className="h-7 w-7" /></div><div><h2 className="page-title">MyMerchant</h2><p className="section-note">Live merchant records from the My_Merchant Google Sheet.</p></div></div></div>;
 }
 
-function MetricCard({ icon: Icon, label, value, tone }: { icon: typeof Store; label: string; value: number; tone: "emerald" | "blue" | "amber" | "violet" }) {
-  const colors = { emerald: "bg-emerald-100 text-emerald-700", blue: "bg-sky-100 text-sky-700", amber: "bg-amber-100 text-amber-700", violet: "bg-violet-100 text-violet-700" };
+function MetricCard({ icon: Icon, label, value, tone }: { icon: typeof Store; label: string; value: number; tone: "emerald" | "blue" }) {
+  const colors = { emerald: "bg-emerald-100 text-emerald-700", blue: "bg-sky-100 text-sky-700" };
   return <div className="crm-card p-4"><div className="flex items-center gap-3"><div className={`flex h-11 w-11 items-center justify-center rounded-xl ${colors[tone]}`}><Icon className="h-5 w-5" /></div><div><p className="label mb-1">{label}</p><p className="text-2xl font-extrabold text-slate-950 dark:text-white">{value.toLocaleString()}</p></div></div></div>;
-}
-
-function CoverageCard({ label, value, total, percentage, color }: { label: string; value: number; total: number; percentage: number; color: "emerald" | "amber" }) {
-  const colors = color === "emerald"
-    ? { text: "text-emerald-700", track: "bg-emerald-100", bar: "bg-gradient-to-r from-emerald-600 to-teal-500" }
-    : { text: "text-amber-700", track: "bg-amber-100", bar: "bg-gradient-to-r from-amber-500 to-orange-500" };
-  return (
-    <div className="crm-card p-4">
-      <div className="flex items-end justify-between gap-3">
-        <div><p className="label">{label}</p><p className="mt-1 text-sm font-bold text-slate-600">{value.toLocaleString()} of {total.toLocaleString()} merchants</p></div>
-        <p className={`text-2xl font-black ${colors.text}`}>{percentage}%</p>
-      </div>
-      <div className={`mt-3 h-2.5 overflow-hidden rounded-full ${colors.track}`}><div className={`h-full rounded-full transition-all ${colors.bar}`} style={{ width: `${percentage}%` }} /></div>
-    </div>
-  );
 }
 
 function StatusPill({ value }: { value: string }) {
