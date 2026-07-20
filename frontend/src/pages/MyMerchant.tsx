@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { CalendarDays, Phone, Search, Store, UserRoundCheck } from "lucide-react";
+import { BadgeDollarSign, CalendarDays, MapPin, Phone, QrCode, Search, Store, UserRoundCheck } from "lucide-react";
 import { useMemo, useState } from "react";
 import { DataTable } from "../components/DataTable";
 import type { MerchantRecord } from "../types";
@@ -164,7 +164,42 @@ function isActiveStatus(value: string) {
 }
 
 function PageHeader() {
-  return <div className="crm-card p-5"><div className="flex items-center gap-4"><div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 text-bank-dark"><Store className="h-7 w-7" /></div><div><h2 className="page-title">MyMerchant</h2><p className="section-note">Live merchant records from the My_Merchant Google Sheet.</p></div></div></div>;
+  return (
+    <div className="crm-card overflow-hidden">
+      <div className="grid items-stretch lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="flex items-center gap-4 p-5 sm:p-6">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-bank-dark shadow-sm ring-1 ring-emerald-200"><Store className="h-7 w-7" /></div>
+          <div>
+            <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-emerald-700 ring-1 ring-emerald-100">Merchant portfolio</span>
+            <h2 className="mt-2 page-title">MyMerchant</h2>
+            <p className="section-note">Live merchant records from the My_Merchant Google Sheet.</p>
+          </div>
+        </div>
+        <MerchantVisual />
+      </div>
+    </div>
+  );
+}
+
+function MerchantVisual() {
+  return (
+    <div className="relative hidden min-h-[165px] overflow-hidden border-l border-emerald-100 bg-gradient-to-br from-emerald-700 via-teal-700 to-emerald-900 lg:block" aria-hidden="true">
+      <div className="absolute -right-12 -top-16 h-44 w-44 rounded-full border-[24px] border-white/5" />
+      <div className="absolute -bottom-20 left-10 h-40 w-40 rounded-full bg-teal-300/10 blur-sm" />
+      <div className="absolute bottom-5 left-7 flex h-24 w-28 items-center justify-center rounded-2xl border border-white/20 bg-white/95 text-emerald-700 shadow-xl">
+        <Store className="h-12 w-12" />
+        <div className="absolute -right-3 -top-3 flex h-9 w-9 items-center justify-center rounded-xl bg-amber-400 text-amber-950 shadow-lg"><BadgeDollarSign className="h-5 w-5" /></div>
+      </div>
+      <div className="absolute right-7 top-5 w-44 rounded-2xl border border-white/20 bg-white/10 p-4 text-white shadow-lg backdrop-blur">
+        <div className="flex items-center justify-between"><span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-100">Merchant network</span><QrCode className="h-5 w-5" /></div>
+        <div className="mt-4 space-y-2">
+          <div className="h-2 w-full rounded-full bg-white/20"><div className="h-2 w-3/4 rounded-full bg-emerald-300" /></div>
+          <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-50"><MapPin className="h-3.5 w-3.5" />Assigned portfolio</div>
+        </div>
+      </div>
+      <div className="absolute bottom-5 right-10 flex items-center gap-2 rounded-full border border-white/15 bg-emerald-950/30 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wide text-emerald-50 backdrop-blur"><span className="h-2 w-2 animate-pulse rounded-full bg-emerald-300" />Live sheet data</div>
+    </div>
+  );
 }
 
 function MetricCard({ icon: Icon, label, value, tone }: { icon: typeof Store; label: string; value: number; tone: "emerald" | "blue" }) {
