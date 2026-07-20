@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { BadgeDollarSign, Phone, Search, Store, UserRoundCheck, Users } from "lucide-react";
+import { BadgeDollarSign, CalendarDays, Phone, Search, Store, UserRoundCheck, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { DataTable } from "../components/DataTable";
 import type { MerchantRecord } from "../types";
@@ -10,6 +10,7 @@ type MerchantView = MerchantRecord & {
   merchantPhone: string;
   status: string;
   usdAccountStatus: string;
+  dateRegister: string;
   messageDate: string;
 };
 
@@ -59,9 +60,14 @@ export function MyMerchant({ merchants }: { merchants: MerchantRecord[] }) {
       cell: ({ row }) => <StatusPill value={row.original.status || "Unspecified"} />
     },
     {
-      accessorKey: "usdAccountStatus",
-      header: "USD Account Status",
-      cell: ({ row }) => <StatusPill value={row.original.usdAccountStatus || "Unspecified"} />
+      accessorKey: "dateRegister",
+      header: "Date Register",
+      cell: ({ row }) => (
+        <div className="inline-flex min-w-[155px] items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-extrabold text-emerald-800 ring-1 ring-emerald-200">
+          <CalendarDays className="h-4 w-4" />
+          {row.original.dateRegister || "Not registered"}
+        </div>
+      )
     }
   ];
 
@@ -101,6 +107,7 @@ function normalizeMerchant(row: MerchantRecord): MerchantView {
     merchantPhone: field(row, "MERCHANT_PHONE"),
     status: field(row, "STATUS"),
     usdAccountStatus: field(row, "STATUS USD ACCOUNT", "USD ACCOUNT STATUS", "STATUS_USD_ACCOUNT", "USD_STATUS", "STATUS USD"),
+    dateRegister: field(row, "DATE REGISTER", "REGISTER DATE", "DATE_REGISTER", "REGISTRATION DATE"),
     messageDate: field(row, "Message_Date", "Date_Added", "Created_At", "Created_Date", "Date")
   };
 }
