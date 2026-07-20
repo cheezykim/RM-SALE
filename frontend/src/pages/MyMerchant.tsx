@@ -17,13 +17,15 @@ type MerchantView = MerchantRecord & {
 export function MyMerchant({ merchants }: { merchants: MerchantRecord[] }) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("All");
+  const [dateFilter, setDateFilter] = useState("All Dates");
 
   const records = useMemo(() => merchants.map(normalizeMerchant).sort(compareNewest), [merchants]);
   const statusOptions = ["All", ...Array.from(new Set(records.map((merchant) => merchant.status))).filter(Boolean)];
   const filtered = useMemo(() => records.filter((merchant) => {
     if (status !== "All" && merchant.status !== status) return false;
+    if (!matchesDateFilter(merchant.dateRegister, dateFilter)) return false;
     return !query || Object.values(merchant).join(" ").toLowerCase().includes(query.toLowerCase());
-  }), [records, query, status]);
+  }), [records, query, status, dateFilter]);
 
   const activeCount = records.filter((merchant) => isActiveStatus(merchant.status)).length;
 
@@ -75,9 +77,10 @@ export function MyMerchant({ merchants }: { merchants: MerchantRecord[] }) {
         <MetricCard icon={UserRoundCheck} label="Active" value={activeCount} tone="blue" />
       </div>
       <div className="crm-card p-4">
-        <div className="grid gap-4 lg:grid-cols-[1fr_260px]">
+        <div className="grid gap-4 lg:grid-cols-[1fr_240px_240px]">
           <div><label className="label">Search Merchant</label><div className="relative"><Search className="absolute left-3 top-2.5 h-4 w-4 text-muted" /><input className="input-control pl-9" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search merchant, owner, phone..." /></div></div>
           <div><label className="label">Status</label><select className="input-control" value={status} onChange={(event) => setStatus(event.target.value)}>{statusOptions.map((option) => <option key={option}>{option}</option>)}</select></div>
+          <div><label className="label">Date Register</label><select className="input-control" value={dateFilter} onChange={(event) => setDateFilter(event.target.value)}>{["All Dates", "Today", "Last 7 Days", "This Month"].map((option) => <option key={option}>{option}</option>)}</select></div>
         </div>
       </div>
       <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800">
@@ -92,7 +95,7 @@ export function MyMerchant({ merchants }: { merchants: MerchantRecord[] }) {
 function normalizeMerchant(row: MerchantRecord): MerchantView {
   return {
     ...row,
-    merchantId: field(row, "MERCHANT ID"),
+    merchantId: field(row, "MERCHANT ID", "MERCHANT_ID", "MERCHANTID", "MERCHANT CODE", "MID"),
     ownerName: field(row, "OWNER NAME"),
     merchantPhone: field(row, "MERCHANT_PHONE"),
     status: field(row, "STATUS", "MERCHANT STATUS", "STATUS MERCHANT", "MERCHANT_STATUS"),
@@ -113,13 +116,34 @@ function field(row: MerchantRecord, ...keys: string[]) {
 }
 
 function normalizeHeader(value: string) {
-  return value.replace(/^\uFEFF/, "").trim().toUpperCase().replace(/[_\s-]+/g, " ");
+  return value
+    .replace(/[\uFEFF\u200B-\u200D\u2060]/g, "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, " ")
+    .trim();
 }
 
 function compareNewest(a: MerchantView, b: MerchantView) {
   const time = Date.parse(b.messageDate) - Date.parse(a.messageDate);
   if (Number.isFinite(time) && time) return time;
   return Number(b._row_number || 0) - Number(a._row_number || 0);
+}
+
+function matchesDateFilter(value: string, filter: string) {
+  if (filter === "All Dates") return true;
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return false;
+  const today = new Date();
+  if (filter === "Today") return date.toDateString() === today.toDateString();
+  if (filter === "This Month") return date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
+  if (filter === "Last 7 Days") {
+    const start = new Date(today);
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - 6);
+    return date >= start && date <= today;
+  }
+  return true;
 }
 
 function isActiveStatus(value: string) {
