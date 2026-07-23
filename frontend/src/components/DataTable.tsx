@@ -33,13 +33,13 @@ export function DataTable<T>({ data, columns, search = "", pageSize = 30, onRowC
 
   return (
     <div className={`crm-card overflow-hidden ${tone === "emerald" ? "ring-2 ring-emerald-200/90 dark:ring-emerald-400/30" : tone === "blue" ? "ring-2 ring-blue-200/90 dark:ring-blue-400/30" : ""}`}>
-      <div className="overflow-x-auto">
-        <table className="min-w-[1040px] w-full border-collapse text-sm">
+      <div className="responsive-table-scroll" role="region" aria-label="Scrollable data table" tabIndex={0}>
+        <table className="w-full min-w-[760px] border-collapse text-sm lg:min-w-[1040px]">
           <thead className={`${headerToneClass(headerTone)} backdrop-blur`}>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <th key={header.id} className={`border-b px-5 py-4 text-left text-[11px] font-extrabold uppercase tracking-wider ${headerCellToneClass(headerTone)}`}>
+                  <th key={header.id} className={`border-b px-3 py-3 text-left text-[11px] font-extrabold uppercase tracking-wider sm:px-5 sm:py-4 ${headerCellToneClass(headerTone)}`}>
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </th>
                 ))}
@@ -55,7 +55,7 @@ export function DataTable<T>({ data, columns, search = "", pageSize = 30, onRowC
                   onClick={() => onRowClick?.(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="border-r border-slate-200/80 px-5 py-4 align-top text-slate-800 last:border-r-0 dark:border-white/10 dark:text-slate-200">
+                    <td key={cell.id} className="border-r border-slate-200/80 px-3 py-3 align-top text-slate-800 last:border-r-0 dark:border-white/10 dark:text-slate-200 sm:px-5 sm:py-4">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}

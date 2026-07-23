@@ -11,6 +11,7 @@
     @apply bg-background text-foreground antialiased;
     font-family: Inter, "Segoe UI", Arial, sans-serif;
     min-width: 320px;
+    overflow-x: hidden;
   }
 
   button,
@@ -48,6 +49,38 @@
 
   .glass-panel {
     @apply rounded-xl border border-white/70 bg-white/70 shadow-glass backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70;
+  }
+
+  .responsive-table-scroll {
+    @apply relative w-full overflow-x-auto overscroll-x-contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .responsive-table-scroll:focus-visible {
+    @apply outline-none ring-2 ring-inset ring-bank/40;
+  }
+}
+
+@media (max-width: 639px) {
+  .page-title {
+    @apply text-xl;
+  }
+
+  .crm-card {
+    @apply rounded-lg;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+@supports (padding: max(0px)) {
+  .mobile-safe-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
 }
 

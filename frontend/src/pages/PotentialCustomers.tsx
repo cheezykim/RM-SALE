@@ -463,14 +463,14 @@ function AddCustomerDrawer({
         className="ml-auto flex h-full w-full max-w-[760px] animate-slide-in-right flex-col border-l border-border bg-white/95 shadow-drawer"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="border-b border-border p-6">
+        <div className="border-b border-border p-4 sm:p-6">
           <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-bank-soft text-bank-dark">
+            <div className="flex min-w-0 items-start gap-3 sm:gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-bank-soft text-bank-dark sm:h-12 sm:w-12">
                 <Sparkles className="h-6 w-6" />
               </div>
-              <div>
-                <h2 className="text-xl font-extrabold text-slate-950">Add Customer</h2>
+              <div className="min-w-0">
+                <h2 className="text-lg font-extrabold text-slate-950 sm:text-xl">Add Customer</h2>
                 <p className="mt-1 text-sm text-muted">Create a clean banking CRM record with source visibility for follow up.</p>
               </div>
             </div>
@@ -480,7 +480,7 @@ function AddCustomerDrawer({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="mb-5 rounded-md border border-bank/20 bg-bank-soft px-4 py-3 text-sm font-semibold text-bank-dark">
             <div className="flex items-start gap-3">
               <Bell className="mt-0.5 h-4 w-4 shrink-0" />
@@ -521,7 +521,7 @@ function AddCustomerDrawer({
           </div>
         </div>
 
-        <div className="border-t border-border bg-white p-6">
+        <div className="mobile-safe-bottom border-t border-border bg-white p-4 sm:p-6">
           <div className="grid grid-cols-2 gap-3">
             <Button variant="outline" onClick={onClose}>Cancel</Button>
             <Button onClick={submit} disabled={!canSubmit || saving}>

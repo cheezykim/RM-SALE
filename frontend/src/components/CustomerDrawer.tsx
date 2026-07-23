@@ -75,15 +75,15 @@ export function CustomerDrawer({
         className="ml-auto flex h-full w-full max-w-[780px] animate-slide-in-right flex-col border-l border-border bg-white/95 shadow-drawer"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="border-b border-border bg-white/90 p-6">
+        <div className="border-b border-border bg-white/90 p-4 sm:p-6">
           <div className="flex items-start justify-between gap-4">
-            <div className="flex min-w-0 items-start gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-bank text-lg font-extrabold text-white shadow-sm">
+            <div className="flex min-w-0 items-start gap-3 sm:gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-bank text-lg font-extrabold text-white shadow-sm sm:h-12 sm:w-12">
                 {safeText(form.Name, "C").slice(0, 1)}
               </div>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="truncate text-xl font-extrabold text-slate-950">{safeText(form.Name, "Customer Profile")}</h2>
+                  <h2 className="truncate text-lg font-extrabold text-slate-950 sm:text-xl">{safeText(form.Name, "Customer Profile")}</h2>
                   <StatusBadge status={form.Status} />
                   <LeadBadge level={form.Potential_Level} />
                 </div>
@@ -99,8 +99,8 @@ export function CustomerDrawer({
           </div>
         </div>
 
-        <div className="border-b border-border bg-white/80 px-6">
-          <div className="flex gap-6 overflow-x-auto">
+        <div className="border-b border-border bg-white/80 px-4 sm:px-6">
+          <div className="flex gap-5 overflow-x-auto sm:gap-6">
             {tabs.map((item) => (
               <button
                 key={item}
@@ -113,7 +113,7 @@ export function CustomerDrawer({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto bg-slate-50/70 p-6">
+        <div className="flex-1 overflow-y-auto bg-slate-50/70 p-4 sm:p-6">
           {tab === "Overview" && (
             <div className="space-y-5">
               <SummaryStrip form={form} />
@@ -169,7 +169,7 @@ export function CustomerDrawer({
           )}
         </div>
 
-        <div className="border-t border-border bg-white/95 p-6">
+        <div className="mobile-safe-bottom border-t border-border bg-white/95 p-4 sm:p-6">
           <div className="grid grid-cols-2 gap-3">
             <Button variant="outline" onClick={onClose}>Cancel</Button>
             <Button onClick={save} disabled={saving}>
